@@ -3,7 +3,9 @@
   "compilerOptions": {
     "strict": true,
     "ignoreDeprecations": "6.0",
+    "rootDir": ".",
     "baseUrl": ".",
+    "types": ["jest", "node"],
     "paths": {
       "@/*": [
         "src/*"

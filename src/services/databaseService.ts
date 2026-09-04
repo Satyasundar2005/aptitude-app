@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { Difficulty, ExamTrack, Question } from '../types/game';
 import { generateQuestion } from './questionGenerator';
+import { QuestionSchema } from '../schemas/game.schema';
 
 export interface RoomRecord {
   id: string;
@@ -63,19 +64,36 @@ export async function fetchQuestionsFromDb(
       return Array.from({ length: limit }, () => generateQuestion(difficulty, track));
     }
 
-    // Map database rows to Question model
-    return data.map((q) => ({
-      id: q.id,
-      text: q.text,
-      options: (Array.isArray(q.options) ? q.options : []) as string[],
-      correctIndex: q.correct_index,
-      category: q.category as any,
-      difficulty: q.difficulty as Difficulty,
-      timeLimit: q.time_limit,
-      examTrack: q.exam_track as ExamTrack,
-      examTag: q.exam_tag || undefined,
-      explanation: q.explanation || undefined,
-    }));
+    // Map database rows to Question model and validate with Zod
+    const validatedQuestions: Question[] = [];
+
+    for (const q of data) {
+      const candidate = {
+        id: q.id,
+        text: q.text,
+        options: (Array.isArray(q.options) ? q.options : []) as string[],
+        correctIndex: q.correct_index,
+        category: q.category as any,
+        difficulty: q.difficulty as Difficulty,
+        timeLimit: q.time_limit,
+        examTrack: q.exam_track as ExamTrack,
+        examTag: q.exam_tag || undefined,
+        explanation: q.explanation || undefined,
+      };
+
+      const parsed = QuestionSchema.safeParse(candidate);
+      if (parsed.success) {
+        validatedQuestions.push(parsed.data as Question);
+      } else {
+        console.warn('[DatabaseService] Invalid question skipped:', parsed.error.issues);
+      }
+    }
+
+    if (validatedQuestions.length === 0) {
+      return Array.from({ length: limit }, () => generateQuestion(difficulty, track));
+    }
+
+    return validatedQuestions;
   } catch (err) {
     console.warn('[Supabase] Failed to fetch questions from DB, using generator fallback:', err);
     return Array.from({ length: limit }, () => generateQuestion(difficulty, track));
