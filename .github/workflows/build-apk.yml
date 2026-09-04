@@ -45,19 +45,20 @@ jobs:
           EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_7xR38UkPru464YPMvm5IMA_ZP6WDeR4"
           EXPO_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_7xR38UkPru464YPMvm5IMA_ZP6WDeR4"
 
-      - name: Build Android APK with Gradle
+      - name: Build Android Standalone Release APK with Gradle
         run: |
           cd android
           chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleRelease --no-daemon
         env:
+          NODE_ENV: production
           EXPO_PUBLIC_SUPABASE_URL: "https://gkurwysglbuofrvjhwlq.supabase.co"
           EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_7xR38UkPru464YPMvm5IMA_ZP6WDeR4"
           EXPO_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_7xR38UkPru464YPMvm5IMA_ZP6WDeR4"
 
       - name: Prepare APK for Release
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk AptiClash.apk
+          cp android/app/build/outputs/apk/release/app-release.apk AptiClash.apk
           ls -lh AptiClash.apk
 
       - name: Upload APK to GitHub Artifacts
