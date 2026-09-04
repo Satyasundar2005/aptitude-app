@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Database } from '../types/supabase';
+import { safeStorage } from '../utils/safeStorage';
 
 // Supabase project credentials from Expo public environment variables
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
@@ -30,9 +30,9 @@ export const supabase = createClient<Database>(
   isSupabaseConfigured ? supabaseAnonKey : fallbackKey,
   {
     auth: {
-      storage: AsyncStorage,
-      autoRefreshToken: true,
-      persistSession: true,
+      storage: safeStorage,
+      autoRefreshToken: isSupabaseConfigured,
+      persistSession: isSupabaseConfigured,
       detectSessionInUrl: false,
     },
     realtime: {

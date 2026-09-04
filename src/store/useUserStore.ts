@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { safeStorage } from '../utils/safeStorage';
 import { ExamTrack } from '../types/game';
 
 export interface UserProfile {
@@ -100,7 +100,7 @@ export const useUserStore = create<UserStore>()(
     }),
     {
       name: 'appticlash-user-store',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => safeStorage),
     }
   )
 );
