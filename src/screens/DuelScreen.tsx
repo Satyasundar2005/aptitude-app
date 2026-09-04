@@ -209,7 +209,7 @@ export default function DuelScreen() {
                   {mode === 'solo_blitz' ? `Round ${roundNumber}` : `Best Streak: ${player2.combo}`}
                 </Text>
               </View>
-            </View>
+                       </View>
 
             {/* Action Buttons */}
             <View style={styles.actionButtonsRow}>
