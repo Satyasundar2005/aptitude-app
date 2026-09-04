@@ -4,20 +4,28 @@
     "slug": "appticlash",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "scheme": "appticlash",
     "userInterfaceStyle": "dark",
     "splash": {
-      "backgroundColor": "#1a1a2e"
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B0F19"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.appticlash.app"
+      "bundleIdentifier": "com.appticlash.app",
+      "icon": "./assets/icon.png"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#1a1a2e"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0B0F19"
       },
       "package": "com.appticlash.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
