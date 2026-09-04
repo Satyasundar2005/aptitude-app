@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "AptiClash",
+    "slug": "appticlash",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "appticlash",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#1a1a2e"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.appticlash.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1a1a2e"
+      },
+      "package": "com.appticlash.app"
+    },
+    "plugins": ["expo-router"]
+  }
+}
