@@ -23,6 +23,9 @@ import { MatiksJourneyPath } from '../components/solo/MatiksJourneyPath';
 import { BrilliantCourseList } from '../components/solo/BrilliantCourseList';
 import { LessonInteractiveModal } from '../components/solo/LessonInteractiveModal';
 import { DailyRewardsModal } from '../components/rewards/DailyRewardsModal';
+import { InfoButton } from '../components/common/InfoButton';
+import { FeatureInfoModal } from '../components/common/FeatureInfoModal';
+import { FEATURE_EXPLANATIONS } from '../data/featureExplanations';
 
 const CATEGORY_TABS: { id: string; label: string; stageId?: StageId }[] = [
   { id: 'all', label: 'All Levels (1–30)' },
@@ -52,6 +55,7 @@ export default function PracticeScreen() {
 
   const [activeModalLevel, setActiveModalLevel] = useState<StudyLevel | null>(null);
   const [showDailyRewards, setShowDailyRewards] = useState(false);
+  const [activeInfoKey, setActiveInfoKey] = useState<string | null>(null);
   const claimableCount = getClaimableCount();
 
   // Filter levels based on selected category tab
@@ -98,9 +102,9 @@ export default function PracticeScreen() {
           >
             <ArrowLeft size={20} color="#F8FAFC" />
           </TouchableOpacity>
-          <View>
+          <View style={styles.titleWithInfoRow}>
             <Text style={styles.topBarTitle}>Solo Study</Text>
-            <Text style={styles.topBarSub}>Foundations to CAT 99%ile</Text>
+            <InfoButton size={12} color="#06B6D4" onPress={() => setActiveInfoKey('self_study')} />
           </View>
         </View>
 
@@ -200,6 +204,7 @@ export default function PracticeScreen() {
             levelStars={levelStars}
             userAvatar={profile.avatar}
             onSelectLevel={handleSelectLevel}
+            onInfoPress={() => setActiveInfoKey('self_study')}
           />
         ) : (
           <BrilliantCourseList
@@ -219,7 +224,10 @@ export default function PracticeScreen() {
           style={styles.floatingBarInner}
         >
           <View style={styles.floatingBarLeft}>
-            <Text style={styles.floatingBarTag}>NEXT UP • LEVEL {currentLevelData.id}</Text>
+            <View style={styles.titleWithInfoRow}>
+              <Text style={styles.floatingBarTag}>NEXT UP • LEVEL {currentLevelData.id}</Text>
+              <InfoButton size={10} color="#06B6D4" onPress={() => setActiveInfoKey('self_study')} />
+            </View>
             <Text style={styles.floatingBarTitle} numberOfLines={1}>
               {currentLevelData.title}
             </Text>
@@ -257,6 +265,13 @@ export default function PracticeScreen() {
       <DailyRewardsModal
         visible={showDailyRewards}
         onClose={() => setShowDailyRewards(false)}
+      />
+
+      {/* Feature Information Modal */}
+      <FeatureInfoModal
+        visible={!!activeInfoKey}
+        onClose={() => setActiveInfoKey(null)}
+        info={activeInfoKey ? FEATURE_EXPLANATIONS[activeInfoKey] : null}
       />
     </SafeAreaView>
   );
@@ -464,5 +479,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '900',
     letterSpacing: 0.5,
+  },
+  titleWithInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
 });

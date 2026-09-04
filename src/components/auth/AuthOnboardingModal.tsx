@@ -31,7 +31,7 @@ import { useUserStore } from '../../store/useUserStore';
 import { useRewardsStore } from '../../store/useRewardsStore';
 import { ExamTrack } from '../../types/game';
 
-const { width } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const AVATAR_OPTIONS = ['🎓', '🧠', '⚡', '🎯', '🚀', '🦁', '🐯', '🦉', '👑', '🔥'];
 
@@ -140,11 +140,27 @@ export const AuthOnboardingModal: React.FC<Props> = ({ visible, onClose }) => {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
+        {/* Backdrop tap to dismiss / continue as guest */}
+        <TouchableOpacity
+          style={styles.backdrop}
+          activeOpacity={1}
+          onPress={handleContinueAsGuest}
+        />
+
         <View style={styles.cardContainer}>
           <LinearGradient
             colors={['#1e1b4b', '#0f172a', '#0b0f19']}
             style={styles.cardGradient}
           >
+            {/* Close Button at top right */}
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={handleContinueAsGuest}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <X size={18} color="#94A3B8" />
+            </TouchableOpacity>
+
             {/* Header with App Logo & Welcome Banner */}
             <View style={styles.headerBlock}>
               <View style={styles.logoBadge}>
@@ -410,23 +426,47 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 24,
   },
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
   cardContainer: {
     width: '100%',
     maxWidth: 420,
-    maxHeight: '90%',
+    height: Math.min(SCREEN_HEIGHT * 0.84, 660),
     borderRadius: 24,
     overflow: 'hidden',
     borderWidth: 1.5,
-    borderColor: 'rgba(99, 102, 241, 0.4)',
+    borderColor: 'rgba(99, 102, 241, 0.5)',
     elevation: 20,
     shadowColor: '#6366F1',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.35,
     shadowRadius: 20,
+    position: 'relative',
+    zIndex: 10,
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 25,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   cardGradient: {
     flex: 1,
     padding: 20,
+    paddingTop: 24,
   },
   headerBlock: {
     alignItems: 'center',

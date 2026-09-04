@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -30,6 +30,9 @@ import * as Haptics from 'expo-haptics';
 import { useRewardsStore, POINTS_RULES } from '../../store/useRewardsStore';
 import { useUserStore } from '../../store/useUserStore';
 import { DailyTask } from '../../types/rewards';
+import { InfoButton } from '../common/InfoButton';
+import { FeatureInfoModal } from '../common/FeatureInfoModal';
+import { FEATURE_EXPLANATIONS } from '../../data/featureExplanations';
 
 const { width } = Dimensions.get('window');
 
@@ -65,6 +68,8 @@ export const DailyRewardsModal: React.FC<Props> = ({ visible, onClose }) => {
     isBonusChestEligible,
   } = useRewardsStore();
 
+  const [activeInfoKey, setActiveInfoKey] = useState<string | null>(null);
+
   const completedCount = tasks.filter((t) => t.current >= t.target).length;
   const canClaimBonus = isBonusChestEligible();
 
@@ -93,7 +98,10 @@ export const DailyRewardsModal: React.FC<Props> = ({ visible, onClose }) => {
 
           <View style={styles.headerCenter}>
             <Text style={styles.headerSubtitle}>MATIKS REWARDS</Text>
-            <Text style={styles.headerTitle}>Daily Tasks & Points</Text>
+            <View style={styles.titleWithInfoRow}>
+              <Text style={styles.headerTitle}>Daily Tasks & Points</Text>
+              <InfoButton size={12} color="#F59E0B" onPress={() => setActiveInfoKey('daily_rewards')} />
+            </View>
           </View>
 
           {/* User Points Badge */}
@@ -115,7 +123,10 @@ export const DailyRewardsModal: React.FC<Props> = ({ visible, onClose }) => {
               </View>
               <View style={styles.bonusChestInfo}>
                 <Text style={styles.bonusChestTag}>DAILY GRAND CHEST</Text>
-                <Text style={styles.bonusChestTitle}>Complete All 5 Daily Tasks</Text>
+                <View style={styles.titleWithInfoRow}>
+                  <Text style={styles.bonusChestTitle}>Complete All 5 Daily Tasks</Text>
+                  <InfoButton size={11} color="#F59E0B" onPress={() => setActiveInfoKey('daily_rewards')} />
+                </View>
                 <Text style={styles.bonusChestSub}>
                   {completedCount}/5 finished • Resets every midnight
                 </Text>
@@ -189,8 +200,10 @@ export const DailyRewardsModal: React.FC<Props> = ({ visible, onClose }) => {
 
           {/* Section: Today's Quests */}
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>TODAY'S DAILY TASKS</Text>
-            <Text style={styles.sectionSub}>Earn points every day</Text>
+            <View style={styles.titleWithInfoRow}>
+              <Text style={styles.sectionTitle}>TODAY'S DAILY TASKS</Text>
+              <InfoButton size={11} color="#10B981" onPress={() => setActiveInfoKey('daily_rewards')} />
+            </View>
           </View>
 
           {/* Task Cards */}
@@ -268,8 +281,10 @@ export const DailyRewardsModal: React.FC<Props> = ({ visible, onClose }) => {
 
           {/* Points Rules Across All Formats */}
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>POINTS SYSTEM (ALL FORMATS)</Text>
-            <Text style={styles.sectionSub}>Wins gain points • Losses lose points</Text>
+            <View style={styles.titleWithInfoRow}>
+              <Text style={styles.sectionTitle}>POINTS SYSTEM (ALL FORMATS)</Text>
+              <InfoButton size={11} color="#38BDF8" onPress={() => setActiveInfoKey('points_system')} />
+            </View>
           </View>
 
           <View style={styles.rulesCard}>
@@ -351,6 +366,13 @@ export const DailyRewardsModal: React.FC<Props> = ({ visible, onClose }) => {
             </>
           )}
         </ScrollView>
+
+        {/* Feature Information Modal */}
+        <FeatureInfoModal
+          visible={!!activeInfoKey}
+          onClose={() => setActiveInfoKey(null)}
+          info={activeInfoKey ? FEATURE_EXPLANATIONS[activeInfoKey] : null}
+        />
       </View>
     </Modal>
   );
@@ -409,6 +431,11 @@ const styles = StyleSheet.create({
     color: '#F59E0B',
     fontSize: 12,
     fontWeight: '800',
+  },
+  titleWithInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   scrollContent: {
     padding: 18,

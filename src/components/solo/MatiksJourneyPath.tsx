@@ -14,6 +14,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { StudyLevel } from '../../types/soloStudy';
 import { STUDY_STAGES } from '../../data/soloCurriculum';
+import { InfoButton } from '../common/InfoButton';
 
 const { width } = Dimensions.get('window');
 
@@ -24,6 +25,7 @@ interface Props {
   levelStars: Record<number, number>;
   userAvatar?: string;
   onSelectLevel: (level: StudyLevel) => void;
+  onInfoPress?: () => void;
 }
 
 // Visual props/decorations placed along the journey map
@@ -43,6 +45,7 @@ export const MatiksJourneyPath: React.FC<Props> = ({
   levelStars,
   userAvatar = '🎓',
   onSelectLevel,
+  onInfoPress,
 }) => {
   const completedSet = new Set(completedLevels);
 
@@ -81,10 +84,10 @@ export const MatiksJourneyPath: React.FC<Props> = ({
           <Sparkles size={14} color="#06B6D4" />
           <Text style={styles.pathHeaderPillText}>ADAPTIVE LEARNING ROAD</Text>
         </View>
-        <Text style={styles.pathMainTitle}>From Age 13 to CAT 99%ile</Text>
-        <Text style={styles.pathSubTitle}>
-          30 handcrafted stepping stones • Master mental models & 10-Yr PYQs
-        </Text>
+        <View style={styles.titleWithInfoRow}>
+          <Text style={styles.pathMainTitle}>From Age 13 to CAT 99%ile</Text>
+          {onInfoPress && <InfoButton size={13} color="#06B6D4" onPress={onInfoPress} />}
+        </View>
       </View>
 
       {/* The Journey Nodes */}
@@ -269,14 +272,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#F8FAFC',
     textAlign: 'center',
-    marginBottom: 6,
   },
-  pathSubTitle: {
-    fontSize: 13,
-    color: '#94A3B8',
-    textAlign: 'center',
-    lineHeight: 18,
-    paddingHorizontal: 16,
+  titleWithInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginBottom: 6,
   },
   pathTrackContainer: {
     alignItems: 'center',

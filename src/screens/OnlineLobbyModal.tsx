@@ -26,6 +26,9 @@ import * as Haptics from 'expo-haptics';
 import { useGameStore } from '../store/useGameStore';
 import { useUserStore } from '../store/useUserStore';
 import { Difficulty, ExamTrack } from '../types/game';
+import { InfoButton } from '../components/common/InfoButton';
+import { FeatureInfoModal } from '../components/common/FeatureInfoModal';
+import { FEATURE_EXPLANATIONS } from '../data/featureExplanations';
 
 interface OnlineLobbyModalProps {
   visible: boolean;
@@ -52,6 +55,7 @@ export default function OnlineLobbyModal({
   const [createdCode, setCreatedCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [activeInfoKey, setActiveInfoKey] = useState<string | null>(null);
 
   const handleCreateRoom = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -105,7 +109,10 @@ export default function OnlineLobbyModal({
           <View style={styles.modalHeader}>
             <View style={styles.headerTitleRow}>
               <Globe size={20} color="#818cf8" style={{ marginRight: 8 }} />
-              <Text style={styles.modalTitle}>Play Online With Friends</Text>
+              <View style={styles.titleWithInfoRow}>
+                <Text style={styles.modalTitle}>Play Online With Friends</Text>
+                <InfoButton size={12} color="#818cf8" onPress={() => setActiveInfoKey('online_duel')} />
+              </View>
             </View>
             <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.7}>
               <X size={18} color="#94a3b8" />
@@ -176,11 +183,10 @@ export default function OnlineLobbyModal({
             {/* TAB 1: CREATE ROOM */}
             {tab === 'create' && (
               <View style={styles.sectionContainer}>
-                <Text style={styles.sectionHeading}>Host a Match for Your Friend</Text>
-                <Text style={styles.sectionSub}>
-                  Create a private room in {selectedTrack.toUpperCase()} (
-                  {selectedDifficulty.toUpperCase()}) and share the code with your friend.
-                </Text>
+                <View style={styles.titleWithInfoRow}>
+                  <Text style={styles.sectionHeading}>Host a Match for Your Friend</Text>
+                  <InfoButton size={11} color="#6366f1" onPress={() => setActiveInfoKey('online_create_room')} />
+                </View>
 
                 {createdCode ? (
                   <View style={styles.codeGeneratedCard}>
@@ -233,11 +239,10 @@ export default function OnlineLobbyModal({
             {/* TAB 2: JOIN ROOM */}
             {tab === 'join' && (
               <View style={styles.sectionContainer}>
-                <Text style={styles.sectionHeading}>Enter Friend's Room Code</Text>
-                <Text style={styles.sectionSub}>
-                  Ask your friend for their 6-character room code (e.g. GATE-492) and enter it
-                  below.
-                </Text>
+                <View style={styles.titleWithInfoRow}>
+                  <Text style={styles.sectionHeading}>Enter Friend's Room Code</Text>
+                  <InfoButton size={11} color="#a855f7" onPress={() => setActiveInfoKey('online_join_room')} />
+                </View>
 
                 <TextInput
                   style={styles.inputCode}
@@ -268,11 +273,10 @@ export default function OnlineLobbyModal({
             {/* TAB 3: QUICK MATCH */}
             {tab === 'quick' && (
               <View style={styles.sectionContainer}>
-                <Text style={styles.sectionHeading}>Match with an Online Aspirant</Text>
-                <Text style={styles.sectionSub}>
-                  No friend around right now? Compete instantly against an online peer preparing for{' '}
-                  {selectedTrack.toUpperCase()}!
-                </Text>
+                <View style={styles.titleWithInfoRow}>
+                  <Text style={styles.sectionHeading}>Match with an Online Aspirant</Text>
+                  <InfoButton size={11} color="#10b981" onPress={() => setActiveInfoKey('online_quick_match')} />
+                </View>
 
                 <View style={styles.quickFeaturesBox}>
                   <View style={styles.featureRow}>
@@ -304,6 +308,13 @@ export default function OnlineLobbyModal({
           </ScrollView>
         </View>
       </View>
+
+      {/* Feature Information Modal */}
+      <FeatureInfoModal
+        visible={!!activeInfoKey}
+        onClose={() => setActiveInfoKey(null)}
+        info={activeInfoKey ? FEATURE_EXPLANATIONS[activeInfoKey] : null}
+      />
     </Modal>
   );
 }
@@ -530,5 +541,11 @@ const styles = StyleSheet.create({
     color: '#cbd5e1',
     fontSize: 13,
     fontWeight: '600',
+  },
+  titleWithInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
   },
 });
