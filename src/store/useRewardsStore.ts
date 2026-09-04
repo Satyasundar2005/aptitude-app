@@ -121,7 +121,11 @@ export const useRewardsStore = create<RewardsStoreState>()(
         if (current !== today) {
           set({
             dateKey: today,
-            tasks: INITIAL_TASKS.map((t) => ({ ...t, current: t.id === 'daily_login' ? 1 : 0, claimed: false })),
+            tasks: INITIAL_TASKS.map((t) => ({
+              ...t,
+              current: t.id === 'daily_login' ? 1 : 0,
+              claimed: false,
+            })),
             bonusChestClaimed: false,
           });
         }
@@ -156,7 +160,11 @@ export const useRewardsStore = create<RewardsStoreState>()(
         const state = get();
         const updatedTasks = state.tasks.map((task) => {
           let inc = 0;
-          if (task.id === 'duel_win' && outcome === 'win' && (format === 'duel' || format === 'online')) {
+          if (
+            task.id === 'duel_win' &&
+            outcome === 'win' &&
+            (format === 'duel' || format === 'online')
+          ) {
             inc = 1;
           } else if (task.id === 'blitz_sprint' && format === 'blitz') {
             inc = 1;
@@ -190,7 +198,8 @@ export const useRewardsStore = create<RewardsStoreState>()(
           tasks: updatedTasks,
           history: [historyEntry, ...state.history.slice(0, 49)],
           totalPointsEarned: delta > 0 ? state.totalPointsEarned + delta : state.totalPointsEarned,
-          totalPointsLost: delta < 0 ? state.totalPointsLost + Math.abs(delta) : state.totalPointsLost,
+          totalPointsLost:
+            delta < 0 ? state.totalPointsLost + Math.abs(delta) : state.totalPointsLost,
         });
 
         return {

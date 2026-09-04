@@ -7,6 +7,7 @@ import {
   Sparkles,
   AlertCircle,
   ArrowRight,
+  MessageSquare,
 } from 'lucide-react-native';
 import { KojiAvatar } from './KojiAvatar';
 import { KojiExplanation } from '../../services/kojiTutorService';
@@ -14,6 +15,7 @@ import { KojiExplanation } from '../../services/kojiTutorService';
 interface Props {
   correction: KojiExplanation;
   onContinue?: () => void;
+  onAskDoubt?: () => void;
   continueButtonText?: string;
   showContinueButton?: boolean;
 }
@@ -21,6 +23,7 @@ interface Props {
 export const KojiTutorCard: React.FC<Props> = ({
   correction,
   onContinue,
+  onAskDoubt,
   continueButtonText = 'Got It, Next Question',
   showContinueButton = true,
 }) => {
@@ -101,6 +104,14 @@ export const KojiTutorCard: React.FC<Props> = ({
           {/* Encouragement Footer */}
           <Text style={styles.encouragementText}>"{correction.encouragement}"</Text>
         </View>
+      )}
+
+      {/* Ask Koji Doubt Button */}
+      {onAskDoubt && (
+        <TouchableOpacity style={styles.askDoubtBtn} onPress={onAskDoubt} activeOpacity={0.85}>
+          <MessageSquare size={16} color="#06B6D4" />
+          <Text style={styles.askDoubtBtnText}>Ask Koji a Doubt / Follow-up</Text>
+        </TouchableOpacity>
       )}
 
       {/* Action Button */}
@@ -297,6 +308,24 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
     marginTop: 4,
+  },
+  askDoubtBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#0F172A',
+    borderWidth: 1.5,
+    borderColor: '#06B6D4',
+    paddingVertical: 11,
+    borderRadius: 12,
+    marginTop: 14,
+  },
+  askDoubtBtnText: {
+    color: '#06B6D4',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   continueBtn: {
     flexDirection: 'row',

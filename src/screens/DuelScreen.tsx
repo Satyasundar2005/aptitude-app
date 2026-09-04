@@ -58,7 +58,8 @@ export default function DuelScreen() {
       setPointsAwarded(null);
     } else if (phase === 'game_over' && !hasRecordedPointsRef.current) {
       hasRecordedPointsRef.current = true;
-      const isP1Win = mode === 'solo_blitz' ? player2.score > player1.score : player1.score > player2.score;
+      const isP1Win =
+        mode === 'solo_blitz' ? player2.score > player1.score : player1.score > player2.score;
       const isDraw = player1.score === player2.score;
       const outcome = isP1Win ? 'win' : isDraw ? 'draw' : 'loss';
       const correctCount = mode === 'solo_blitz' ? player2.combo : player1.combo;

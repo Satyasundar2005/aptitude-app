@@ -148,10 +148,7 @@ export const AuthOnboardingModal: React.FC<Props> = ({ visible, onClose }) => {
         />
 
         <View style={styles.cardContainer}>
-          <LinearGradient
-            colors={['#1e1b4b', '#0f172a', '#0b0f19']}
-            style={styles.cardGradient}
-          >
+          <LinearGradient colors={['#1e1b4b', '#0f172a', '#0b0f19']} style={styles.cardGradient}>
             {/* Close Button at top right */}
             <TouchableOpacity
               style={styles.closeBtn}
@@ -169,7 +166,8 @@ export const AuthOnboardingModal: React.FC<Props> = ({ visible, onClose }) => {
               <Text style={styles.appTitle}>APTICLASH</Text>
               <Text style={styles.appTagline}>Competitive Aptitude & 10-Yr PYQs</Text>
               <Text style={styles.welcomeDesc}>
-                Create an account to track your progress, compete with friends online or offline, and earn reward points!
+                Create an account to track your progress, compete with friends online or offline,
+                and earn reward points!
               </Text>
             </View>
 
@@ -322,7 +320,11 @@ export const AuthOnboardingModal: React.FC<Props> = ({ visible, onClose }) => {
                   <View style={styles.bonusBanner}>
                     <Gift size={16} color="#F59E0B" style={{ marginRight: 8 }} />
                     <Text style={styles.bonusText}>
-                      Instant <Text style={{ color: '#FBBF24', fontWeight: '900' }}>+100 Reward Points</Text> added to your account upon registration!
+                      Instant{' '}
+                      <Text style={{ color: '#FBBF24', fontWeight: '900' }}>
+                        +100 Reward Points
+                      </Text>{' '}
+                      added to your account upon registration!
                     </Text>
                   </View>
 

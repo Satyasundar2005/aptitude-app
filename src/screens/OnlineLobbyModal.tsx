@@ -111,7 +111,11 @@ export default function OnlineLobbyModal({
               <Globe size={20} color="#818cf8" style={{ marginRight: 8 }} />
               <View style={styles.titleWithInfoRow}>
                 <Text style={styles.modalTitle}>Play Online With Friends</Text>
-                <InfoButton size={12} color="#818cf8" onPress={() => setActiveInfoKey('online_duel')} />
+                <InfoButton
+                  size={12}
+                  color="#818cf8"
+                  onPress={() => setActiveInfoKey('online_duel')}
+                />
               </View>
             </View>
             <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.7}>
@@ -185,7 +189,11 @@ export default function OnlineLobbyModal({
               <View style={styles.sectionContainer}>
                 <View style={styles.titleWithInfoRow}>
                   <Text style={styles.sectionHeading}>Host a Match for Your Friend</Text>
-                  <InfoButton size={11} color="#6366f1" onPress={() => setActiveInfoKey('online_create_room')} />
+                  <InfoButton
+                    size={11}
+                    color="#6366f1"
+                    onPress={() => setActiveInfoKey('online_create_room')}
+                  />
                 </View>
 
                 {createdCode ? (
@@ -241,7 +249,11 @@ export default function OnlineLobbyModal({
               <View style={styles.sectionContainer}>
                 <View style={styles.titleWithInfoRow}>
                   <Text style={styles.sectionHeading}>Enter Friend's Room Code</Text>
-                  <InfoButton size={11} color="#a855f7" onPress={() => setActiveInfoKey('online_join_room')} />
+                  <InfoButton
+                    size={11}
+                    color="#a855f7"
+                    onPress={() => setActiveInfoKey('online_join_room')}
+                  />
                 </View>
 
                 <TextInput
@@ -275,7 +287,11 @@ export default function OnlineLobbyModal({
               <View style={styles.sectionContainer}>
                 <View style={styles.titleWithInfoRow}>
                   <Text style={styles.sectionHeading}>Match with an Online Aspirant</Text>
-                  <InfoButton size={11} color="#10b981" onPress={() => setActiveInfoKey('online_quick_match')} />
+                  <InfoButton
+                    size={11}
+                    color="#10b981"
+                    onPress={() => setActiveInfoKey('online_quick_match')}
+                  />
                 </View>
 
                 <View style={styles.quickFeaturesBox}>

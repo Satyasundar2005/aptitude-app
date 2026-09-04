@@ -59,14 +59,8 @@ const getTaskIcon = (icon: string) => {
 
 export const DailyRewardsModal: React.FC<Props> = ({ visible, onClose }) => {
   const { profile } = useUserStore();
-  const {
-    tasks,
-    bonusChestClaimed,
-    history,
-    claimTask,
-    claimBonusChest,
-    isBonusChestEligible,
-  } = useRewardsStore();
+  const { tasks, bonusChestClaimed, history, claimTask, claimBonusChest, isBonusChestEligible } =
+    useRewardsStore();
 
   const [activeInfoKey, setActiveInfoKey] = useState<string | null>(null);
 
@@ -100,7 +94,11 @@ export const DailyRewardsModal: React.FC<Props> = ({ visible, onClose }) => {
             <Text style={styles.headerSubtitle}>MATIKS REWARDS</Text>
             <View style={styles.titleWithInfoRow}>
               <Text style={styles.headerTitle}>Daily Tasks & Points</Text>
-              <InfoButton size={12} color="#F59E0B" onPress={() => setActiveInfoKey('daily_rewards')} />
+              <InfoButton
+                size={12}
+                color="#F59E0B"
+                onPress={() => setActiveInfoKey('daily_rewards')}
+              />
             </View>
           </View>
 
@@ -111,7 +109,10 @@ export const DailyRewardsModal: React.FC<Props> = ({ visible, onClose }) => {
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Grand Daily Bonus Crown Chest Card */}
           <LinearGradient
             colors={['rgba(245, 158, 11, 0.18)', 'rgba(234, 88, 12, 0.08)']}
@@ -125,7 +126,11 @@ export const DailyRewardsModal: React.FC<Props> = ({ visible, onClose }) => {
                 <Text style={styles.bonusChestTag}>DAILY GRAND CHEST</Text>
                 <View style={styles.titleWithInfoRow}>
                   <Text style={styles.bonusChestTitle}>Complete All 5 Daily Tasks</Text>
-                  <InfoButton size={11} color="#F59E0B" onPress={() => setActiveInfoKey('daily_rewards')} />
+                  <InfoButton
+                    size={11}
+                    color="#F59E0B"
+                    onPress={() => setActiveInfoKey('daily_rewards')}
+                  />
                 </View>
                 <Text style={styles.bonusChestSub}>
                   {completedCount}/5 finished • Resets every midnight
@@ -142,12 +147,7 @@ export const DailyRewardsModal: React.FC<Props> = ({ visible, onClose }) => {
                 const done = task.current >= task.target;
                 return (
                   <View key={task.id} style={styles.stepItem}>
-                    <View
-                      style={[
-                        styles.stepDot,
-                        done && styles.stepDotDone,
-                      ]}
-                    >
+                    <View style={[styles.stepDot, done && styles.stepDotDone]}>
                       {done ? (
                         <CheckCircle2 size={12} color="#10B981" />
                       ) : (
@@ -155,12 +155,7 @@ export const DailyRewardsModal: React.FC<Props> = ({ visible, onClose }) => {
                       )}
                     </View>
                     {idx < tasks.length - 1 && (
-                      <View
-                        style={[
-                          styles.stepConnector,
-                          done && styles.stepConnectorDone,
-                        ]}
-                      />
+                      <View style={[styles.stepConnector, done && styles.stepConnectorDone]} />
                     )}
                   </View>
                 );
@@ -175,10 +170,7 @@ export const DailyRewardsModal: React.FC<Props> = ({ visible, onClose }) => {
               </View>
             ) : (
               <TouchableOpacity
-                style={[
-                  styles.claimBonusBtn,
-                  !canClaimBonus && styles.claimBonusBtnDisabled,
-                ]}
+                style={[styles.claimBonusBtn, !canClaimBonus && styles.claimBonusBtnDisabled]}
                 disabled={!canClaimBonus}
                 onPress={handleClaimBonusChest}
                 activeOpacity={0.85}
@@ -202,7 +194,11 @@ export const DailyRewardsModal: React.FC<Props> = ({ visible, onClose }) => {
           <View style={styles.sectionHeaderRow}>
             <View style={styles.titleWithInfoRow}>
               <Text style={styles.sectionTitle}>TODAY'S DAILY TASKS</Text>
-              <InfoButton size={11} color="#10B981" onPress={() => setActiveInfoKey('daily_rewards')} />
+              <InfoButton
+                size={11}
+                color="#10B981"
+                onPress={() => setActiveInfoKey('daily_rewards')}
+              />
             </View>
           </View>
 
@@ -250,7 +246,9 @@ export const DailyRewardsModal: React.FC<Props> = ({ visible, onClose }) => {
                     {isClaimed ? (
                       <View style={styles.taskStatusClaimed}>
                         <CheckCircle2 size={15} color="#10B981" />
-                        <Text style={styles.taskStatusClaimedText}>Claimed (+{task.points} PTS)</Text>
+                        <Text style={styles.taskStatusClaimedText}>
+                          Claimed (+{task.points} PTS)
+                        </Text>
                       </View>
                     ) : isFinished ? (
                       <TouchableOpacity
@@ -283,7 +281,11 @@ export const DailyRewardsModal: React.FC<Props> = ({ visible, onClose }) => {
           <View style={styles.sectionHeaderRow}>
             <View style={styles.titleWithInfoRow}>
               <Text style={styles.sectionTitle}>POINTS SYSTEM (ALL FORMATS)</Text>
-              <InfoButton size={11} color="#38BDF8" onPress={() => setActiveInfoKey('points_system')} />
+              <InfoButton
+                size={11}
+                color="#38BDF8"
+                onPress={() => setActiveInfoKey('points_system')}
+              />
             </View>
           </View>
 
@@ -317,7 +319,9 @@ export const DailyRewardsModal: React.FC<Props> = ({ visible, onClose }) => {
                 <Text style={styles.ruleFormatName}>📚 Solo Study</Text>
                 <View style={styles.ruleBadgeRow}>
                   <Text style={styles.ruleWinText}>≥2 Stars: +{POINTS_RULES.study.win} pts</Text>
-                  <Text style={styles.ruleLossText}>&lt;2 Stars: {POINTS_RULES.study.loss} pts</Text>
+                  <Text style={styles.ruleLossText}>
+                    &lt;2 Stars: {POINTS_RULES.study.loss} pts
+                  </Text>
                 </View>
               </View>
             </View>

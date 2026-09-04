@@ -10,12 +10,7 @@ interface Props {
   style?: ViewStyle;
 }
 
-export const InfoButton: React.FC<Props> = ({
-  onPress,
-  size = 14,
-  color = '#38BDF8',
-  style,
-}) => {
+export const InfoButton: React.FC<Props> = ({ onPress, size = 14, color = '#38BDF8', style }) => {
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     onPress();

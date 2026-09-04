@@ -91,7 +91,13 @@ const EXAM_TRACKS: ExamTrackConfig[] = [
     color: '#38bdf8',
     gradient: ['#0284c7', '#0369a1'],
     icon: GraduationCap,
-    topics: ['Work & Time', 'Speed & Distance', 'Probability', 'Spatial & Geometry', 'Modular Math'],
+    topics: [
+      'Work & Time',
+      'Speed & Distance',
+      'Probability',
+      'Spatial & Geometry',
+      'Modular Math',
+    ],
   },
   {
     id: 'cat',
@@ -111,7 +117,13 @@ const EXAM_TRACKS: ExamTrackConfig[] = [
     color: '#06b6d4',
     gradient: ['#0891b2', '#0e7490'],
     icon: Target,
-    topics: ['Quant Comparison', 'Data Interpretation', 'Algebra & Word', 'Geometry', 'Number Properties'],
+    topics: [
+      'Quant Comparison',
+      'Data Interpretation',
+      'Algebra & Word',
+      'Geometry',
+      'Number Properties',
+    ],
   },
   {
     id: 'ese',
@@ -121,7 +133,13 @@ const EXAM_TRACKS: ExamTrackConfig[] = [
     color: '#f97316',
     gradient: ['#ea580c', '#c2410c'],
     icon: Compass,
-    topics: ['PERT & CPM', 'Quality & Six Sigma', 'Engineering Ethics', 'Analytical Ability', 'Energy & Env'],
+    topics: [
+      'PERT & CPM',
+      'Quality & Six Sigma',
+      'Engineering Ethics',
+      'Analytical Ability',
+      'Energy & Env',
+    ],
   },
   {
     id: 'placement',
@@ -223,7 +241,9 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
   } = useSoloStudyStore();
 
   // Core 3-Feature Tab Selection (Default: 'self_study')
-  const [activeFeature, setActiveFeature] = useState<'self_study' | 'compete' | 'practice'>('self_study');
+  const [activeFeature, setActiveFeature] = useState<'self_study' | 'compete' | 'practice'>(
+    'self_study'
+  );
 
   // Modals
   const [showOnboardingModal, setShowOnboardingModal] = useState(
@@ -303,7 +323,10 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
 
   const handleCopyInviteCode = () => {
     if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Alert.alert('Invite Code', `Your referral code is: ${profile.referralCode || 'CLASH-2026'}\n\nShare this code with friends to earn +50 PTS!`);
+    Alert.alert(
+      'Invite Code',
+      `Your referral code is: ${profile.referralCode || 'CLASH-2026'}\n\nShare this code with friends to earn +50 PTS!`
+    );
   };
 
   return (
@@ -333,10 +356,7 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
       />
 
       {/* 4. Rewards & Tasks Modal */}
-      <DailyRewardsModal
-        visible={showDailyRewards}
-        onClose={() => setShowDailyRewards(false)}
-      />
+      <DailyRewardsModal visible={showDailyRewards} onClose={() => setShowDailyRewards(false)} />
 
       {/* 5. Interactive Lesson Modal for Self-Study */}
       <LessonInteractiveModal
@@ -420,7 +440,10 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
       <View style={styles.featureTabsBar}>
         {/* Feature 1: Self-Study (Default) */}
         <TouchableOpacity
-          style={[styles.featureTabBtn, activeFeature === 'self_study' && styles.featureTabBtnActive]}
+          style={[
+            styles.featureTabBtn,
+            activeFeature === 'self_study' && styles.featureTabBtnActive,
+          ]}
           onPress={() => {
             if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setActiveFeature('self_study');
@@ -524,12 +547,15 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
                   key={cat.id}
                   style={[styles.categoryPill, isSelected && styles.categoryPillActive]}
                   onPress={() => {
-                    if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    if (settings.hapticsEnabled)
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setActiveCategory(cat.stageId || 'all');
                   }}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.categoryPillText, isSelected && styles.categoryPillTextActive]}>
+                  <Text
+                    style={[styles.categoryPillText, isSelected && styles.categoryPillTextActive]}
+                  >
                     {cat.label}
                   </Text>
                 </TouchableOpacity>
@@ -591,7 +617,10 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
       {/* (Play Online, Play Offline 1v1 Split Screen, Invite Friends, Track)      */}
       {/* ========================================================================= */}
       {activeFeature === 'compete' && (
-        <ScrollView contentContainerStyle={styles.featureScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.featureScroll}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Header Banner */}
           <View style={styles.competeHeaderBox}>
             <View style={styles.featureHeaderBadge}>
@@ -608,7 +637,11 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
           <View style={styles.sectionHeaderRow}>
             <View style={styles.titleWithInfoRow}>
               <Text style={styles.sectionHeading}>SELECT EXAM TRACK FOR BATTLE</Text>
-              <InfoButton size={11} color="#38bdf8" onPress={() => setActiveInfoKey('exam_tracks')} />
+              <InfoButton
+                size={11}
+                color="#38bdf8"
+                onPress={() => setActiveInfoKey('exam_tracks')}
+              />
             </View>
             <Text style={styles.sectionSubBadge}>{activeTrackConfig.badge}</Text>
           </View>
@@ -634,7 +667,9 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
                 >
                   <LinearGradient
                     colors={
-                      isSelected ? track.gradient : ['rgba(30, 41, 59, 0.7)', 'rgba(15, 23, 42, 0.8)']
+                      isSelected
+                        ? track.gradient
+                        : ['rgba(30, 41, 59, 0.7)', 'rgba(15, 23, 42, 0.8)']
                     }
                     style={styles.trackGradient}
                   >
@@ -666,8 +701,13 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
             </View>
             <View style={styles.topicsChipsRow}>
               {activeTrackConfig.topics.map((topic, i) => (
-                <View key={i} style={[styles.topicChip, { borderColor: activeTrackConfig.color + '40' }]}>
-                  <Text style={[styles.topicChipText, { color: activeTrackConfig.color }]}>{topic}</Text>
+                <View
+                  key={i}
+                  style={[styles.topicChip, { borderColor: activeTrackConfig.color + '40' }]}
+                >
+                  <Text style={[styles.topicChipText, { color: activeTrackConfig.color }]}>
+                    {topic}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -734,7 +774,9 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
               end={{ x: 1, y: 1 }}
               style={styles.modeCardGradient}
             >
-              <View style={[styles.modeIconCircle, { backgroundColor: 'rgba(244, 114, 182, 0.2)' }]}>
+              <View
+                style={[styles.modeIconCircle, { backgroundColor: 'rgba(244, 114, 182, 0.2)' }]}
+              >
                 <Swords size={24} color="#f472b6" />
               </View>
 
@@ -742,7 +784,10 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
                 <View style={styles.modeTitleRow}>
                   <View style={styles.titleWithInfoRow}>
                     <Text style={styles.modeTitle}>PLAY OFFLINE (1v1 SPLIT SCREEN)</Text>
-                    <InfoButton color="#f472b6" onPress={() => setActiveInfoKey('offline_split_screen')} />
+                    <InfoButton
+                      color="#f472b6"
+                      onPress={() => setActiveInfoKey('offline_split_screen')}
+                    />
                   </View>
                   <View style={[styles.modeTag, { backgroundColor: 'rgba(244, 114, 182, 0.25)' }]}>
                     <Text style={[styles.modeTagText, { color: '#f472b6' }]}>SAME PHONE</Text>
@@ -767,7 +812,10 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
                 <View style={{ flex: 1 }}>
                   <View style={styles.titleWithInfoRow}>
                     <Text style={styles.inviteTitle}>Invite Friends to ApptiClash</Text>
-                    <InfoButton color="#fbbf24" onPress={() => setActiveInfoKey('invite_friends')} />
+                    <InfoButton
+                      color="#fbbf24"
+                      onPress={() => setActiveInfoKey('invite_friends')}
+                    />
                   </View>
                 </View>
               </View>
@@ -806,7 +854,10 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
       {/* (Specific Exam Oriented or Miscellaneous All-Exams Option)                */}
       {/* ========================================================================= */}
       {activeFeature === 'practice' && (
-        <ScrollView contentContainerStyle={styles.featureScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.featureScroll}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Header */}
           <View style={styles.practiceHeaderBox}>
             <View style={styles.practiceBadge}>
@@ -823,7 +874,11 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
           <View style={styles.sectionHeaderRow}>
             <View style={styles.titleWithInfoRow}>
               <Text style={styles.sectionHeading}>SELECT PRACTICE TRACK</Text>
-              <InfoButton size={11} color="#fbbf24" onPress={() => setActiveInfoKey('exam_tracks')} />
+              <InfoButton
+                size={11}
+                color="#fbbf24"
+                onPress={() => setActiveInfoKey('exam_tracks')}
+              />
             </View>
             <Text style={styles.sectionSubBadge}>
               {practiceTrack === 'all' ? 'Universal Mix' : 'Exam-Specific'}
@@ -848,14 +903,17 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
                     isSelected && { borderColor: track.color, borderWidth: 1.8 },
                   ]}
                   onPress={() => {
-                    if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    if (settings.hapticsEnabled)
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setPracticeTrack(track.id);
                   }}
                   activeOpacity={0.8}
                 >
                   <LinearGradient
                     colors={
-                      isSelected ? track.gradient : ['rgba(30, 41, 59, 0.7)', 'rgba(15, 23, 42, 0.8)']
+                      isSelected
+                        ? track.gradient
+                        : ['rgba(30, 41, 59, 0.7)', 'rgba(15, 23, 42, 0.8)']
                     }
                     style={styles.trackGradient}
                   >
@@ -896,7 +954,8 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
                     isSelected && { borderColor: diff.color, borderWidth: 1.8 },
                   ]}
                   onPress={() => {
-                    if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    if (settings.hapticsEnabled)
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                     setPracticeDiff(diff.key);
                   }}
                   activeOpacity={0.85}
@@ -913,7 +972,9 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
                         <Text style={[styles.diffCardLabel, { color: diff.color }]}>
                           {diff.label}
                         </Text>
-                        <View style={[styles.diffCardBadge, { backgroundColor: diff.color + '20' }]}>
+                        <View
+                          style={[styles.diffCardBadge, { backgroundColor: diff.color + '20' }]}
+                        >
                           <Text style={[styles.diffCardBadgeText, { color: diff.color }]}>
                             {diff.tag}
                           </Text>
@@ -949,7 +1010,11 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
               <View style={{ flex: 1 }}>
                 <View style={styles.titleWithInfoRow}>
                   <Text style={styles.startSprintTitle}>START 10-QUESTION SPRINT</Text>
-                  <InfoButton size={12} color="#ffffff" onPress={() => setActiveInfoKey('timed_exam_sprint')} />
+                  <InfoButton
+                    size={12}
+                    color="#ffffff"
+                    onPress={() => setActiveInfoKey('timed_exam_sprint')}
+                  />
                 </View>
                 <Text style={styles.startSprintSub}>
                   {practiceTrack === 'all'

@@ -29,6 +29,7 @@ import { StudyLevel } from '../../types/soloStudy';
 import { useSoloStudyStore } from '../../store/useSoloStudyStore';
 import { useRewardsStore } from '../../store/useRewardsStore';
 import { KojiTutorCard } from '../koji/KojiTutorCard';
+import { KojiInteractiveModal } from '../koji/KojiInteractiveModal';
 import { generateKojiCorrection } from '../../services/kojiTutorService';
 import { Question, QuestionCategory } from '../../types/game';
 
@@ -94,6 +95,7 @@ export const LessonInteractiveModal: React.FC<Props> = ({
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [pointsAwarded, setPointsAwarded] = useState<number | null>(null);
+  const [showKojiDoubtModal, setShowKojiDoubtModal] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -103,6 +105,7 @@ export const LessonInteractiveModal: React.FC<Props> = ({
       setIsAnswerSubmitted(false);
       setCorrectCount(0);
       setPointsAwarded(null);
+      setShowKojiDoubtModal(false);
     }
   }, [visible, level?.id]);
 
@@ -366,6 +369,7 @@ export const LessonInteractiveModal: React.FC<Props> = ({
                       },
                       selectedAnswer ?? 0
                     )}
+                    onAskDoubt={() => setShowKojiDoubtModal(true)}
                     onContinue={handleNextQuestion}
                     continueButtonText={
                       currentQIndex + 1 < level.questions.length
@@ -456,6 +460,23 @@ export const LessonInteractiveModal: React.FC<Props> = ({
             </LinearGradient>
           </View>
         )}
+
+        {/* Koji Interactive Doubt & Concept Clinic */}
+        <KojiInteractiveModal
+          visible={showKojiDoubtModal}
+          question={
+            currentQ
+              ? {
+                  ...currentQ,
+                  category: inferCategory(level.title, currentQ.text),
+                  difficulty: 'medium',
+                  timeLimit: 30,
+                }
+              : null
+          }
+          chosenIndex={selectedAnswer ?? 0}
+          onClose={() => setShowKojiDoubtModal(false)}
+        />
       </View>
     </Modal>
   );

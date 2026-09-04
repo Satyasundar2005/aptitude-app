@@ -27,6 +27,7 @@ import {
   Clock,
   Gauge,
   Lightbulb,
+  ChevronRight,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useGameStore } from '../store/useGameStore';
@@ -34,6 +35,7 @@ import { useRewardsStore } from '../store/useRewardsStore';
 import { KojiTutorModal } from '../components/koji/KojiTutorModal';
 import { KojiAvatar } from '../components/koji/KojiAvatar';
 import { Question } from '../types/game';
+import { MistakeItem } from '../services/kojiChatService';
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 
@@ -75,9 +77,12 @@ export default function SoloBlitzScreen() {
 
   const [countdown, setCountdown] = useState(3);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [kojiModal, setKojiModal] = useState<{ question: Question; chosenIndex: number } | null>(
-    null
-  );
+  const [kojiModal, setKojiModal] = useState<{
+    mistakes?: MistakeItem[];
+    question?: Question;
+    chosenIndex?: number;
+    initialIndex?: number;
+  } | null>(null);
   const [kojiLiveTip, setKojiLiveTip] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerPulse = useRef(new Animated.Value(1)).current;
@@ -274,16 +279,37 @@ export default function SoloBlitzScreen() {
 
             {/* Koji Mistake Clinic Banner if errors occurred */}
             {totalCorrect < blitzHistory.length && (
-              <View style={styles.kojiClinicBanner}>
-                <KojiAvatar size={36} mood="encouraging" showBadge={false} />
+              <TouchableOpacity
+                style={styles.kojiClinicBanner}
+                onPress={() => {
+                  const missedMistakes: MistakeItem[] = blitzHistory
+                    .map((item, idx) => ({ item, roundNumber: idx + 1 }))
+                    .filter(({ item }) => !item.isCorrect)
+                    .map(({ item, roundNumber }) => ({
+                      question: item.question,
+                      chosenIndex: item.selectedOptionIndex ?? 0,
+                      roundNumber,
+                    }));
+                  setKojiModal({ mistakes: missedMistakes, initialIndex: 0 });
+                }}
+                activeOpacity={0.85}
+              >
+                <KojiAvatar size={38} mood="thoughtful" showBadge={false} />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.kojiClinicTitle}>Koji's Mistake Clinic</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={styles.kojiClinicTitle}>1-on-1 Mistake Clinic</Text>
+                    <View style={styles.kojiClinicInteractiveBadge}>
+                      <Sparkles size={9} color="#06B6D4" />
+                      <Text style={styles.kojiClinicInteractiveBadgeText}>Interactive AI</Text>
+                    </View>
+                  </View>
                   <Text style={styles.kojiClinicSub}>
-                    {blitzHistory.length - totalCorrect} questions slipped through. Tap "Ask Koji"
-                    below to master the trick!
+                    {blitzHistory.length - totalCorrect} questions missed. Tap to go through each
+                    question & ask doubts!
                   </Text>
                 </View>
-              </View>
+                <ChevronRight size={18} color="#06B6D4" />
+              </TouchableOpacity>
             )}
 
             {/* Question Breakdown Review List */}
@@ -322,16 +348,27 @@ export default function SoloBlitzScreen() {
                   {!item.isCorrect && (
                     <TouchableOpacity
                       style={styles.askKojiButton}
-                      onPress={() =>
+                      onPress={() => {
+                        const missedMistakes: MistakeItem[] = blitzHistory
+                          .map((h, i) => ({ item: h, roundNumber: i + 1 }))
+                          .filter(({ item: h }) => !h.isCorrect)
+                          .map(({ item: h, roundNumber }) => ({
+                            question: h.question,
+                            chosenIndex: h.selectedOptionIndex ?? 0,
+                            roundNumber,
+                          }));
+                        const targetIdx = missedMistakes.findIndex(
+                          (m) => m.question.id === item.question.id
+                        );
                         setKojiModal({
-                          question: item.question,
-                          chosenIndex: item.selectedOptionIndex ?? 0,
-                        })
-                      }
+                          mistakes: missedMistakes,
+                          initialIndex: targetIdx >= 0 ? targetIdx : 0,
+                        });
+                      }}
                       activeOpacity={0.8}
                     >
                       <KojiAvatar size={20} showBadge={false} />
-                      <Text style={styles.askKojiButtonText}>Ask Koji • Break Down This Trap</Text>
+                      <Text style={styles.askKojiButtonText}>Ask Koji • Ask Doubts On This Q</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -531,8 +568,10 @@ export default function SoloBlitzScreen() {
       {/* Koji Tutor Modal for inspecting mistakes */}
       <KojiTutorModal
         visible={!!kojiModal}
+        mistakes={kojiModal?.mistakes}
         question={kojiModal?.question ?? null}
         chosenIndex={kojiModal?.chosenIndex ?? null}
+        initialIndex={kojiModal?.initialIndex ?? 0}
         onClose={() => setKojiModal(null)}
       />
     </LinearGradient>
@@ -1024,6 +1063,20 @@ const styles = StyleSheet.create({
   kojiClinicTitle: {
     color: '#06B6D4',
     fontSize: 13,
+    fontWeight: '800',
+  },
+  kojiClinicInteractiveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(6, 182, 212, 0.2)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  kojiClinicInteractiveBadgeText: {
+    color: '#06B6D4',
+    fontSize: 9,
     fontWeight: '800',
   },
   kojiClinicSub: {

@@ -11,7 +11,18 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Flame, Zap, Map, Layers, Sparkles, Play, RotateCcw, Trophy, Gift } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  Flame,
+  Zap,
+  Map,
+  Layers,
+  Sparkles,
+  Play,
+  RotateCcw,
+  Trophy,
+  Gift,
+} from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { useSoloStudyStore } from '../store/useSoloStudyStore';
@@ -226,7 +237,11 @@ export default function PracticeScreen() {
           <View style={styles.floatingBarLeft}>
             <View style={styles.titleWithInfoRow}>
               <Text style={styles.floatingBarTag}>NEXT UP • LEVEL {currentLevelData.id}</Text>
-              <InfoButton size={10} color="#06B6D4" onPress={() => setActiveInfoKey('self_study')} />
+              <InfoButton
+                size={10}
+                color="#06B6D4"
+                onPress={() => setActiveInfoKey('self_study')}
+              />
             </View>
             <Text style={styles.floatingBarTitle} numberOfLines={1}>
               {currentLevelData.title}
@@ -262,10 +277,7 @@ export default function PracticeScreen() {
       />
 
       {/* Matiks Daily Rewards & Points Modal */}
-      <DailyRewardsModal
-        visible={showDailyRewards}
-        onClose={() => setShowDailyRewards(false)}
-      />
+      <DailyRewardsModal visible={showDailyRewards} onClose={() => setShowDailyRewards(false)} />
 
       {/* Feature Information Modal */}
       <FeatureInfoModal
