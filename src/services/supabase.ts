@@ -11,13 +11,18 @@ function cleanSupabaseUrl(url: string): string {
 
 const rawUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const supabaseUrl = cleanSupabaseUrl(rawUrl);
-const supabaseAnonKey = (process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '').trim();
+const supabaseAnonKey = (
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
+  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+  ''
+).trim();
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&
   supabaseAnonKey &&
   supabaseUrl !== 'https://your-project.supabase.co' &&
   supabaseAnonKey !== 'your-anon-key' &&
+  supabaseAnonKey !== 'your-publishable-key' &&
   supabaseAnonKey !== 'PASTE_YOUR_SUPABASE_ANON_KEY_HERE'
 );
 
