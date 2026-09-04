@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -377,20 +377,33 @@
         </p>
 
         <div class="download-card">
+          <div id="releaseStatusBadge" style="display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); padding: 5px 14px; border-radius: 20px; font-size: 13px; color: #10B981; font-weight: 600;">
+            <span style="width: 8px; height: 8px; background: #10B981; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #10B981;"></span>
+            <span id="releaseStatusText">Standalone Release Build Ready</span>
+          </div>
+
           <a id="apkDownloadBtn" href="https://github.com/Satyasundar2005/aptitude-app/releases/download/latest-apk/AptiClash.apk" class="btn-download">
             <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-5H8l4-4 4 4h-3v5h-2z"/></svg>
-            Download Android APK (Direct)
+            <span id="btnText">Download Android APK (Direct)</span>
           </a>
 
           <div class="download-meta">
-            <span>📦 Package: <b>com.appticlash.app</b></span>
+            <span id="fileSizeSpan">📦 File Size: <b>Checking latest...</b></span>
             <span>📱 OS: <b>Android 8.0+</b></span>
-            <span>✨ Architecture: <b>Universal APK</b></span>
+            <span>✨ Architecture: <b>Universal Standalone</b></span>
+            <span id="releaseDateSpan">🕒 Updated: <b>Checking...</b></span>
+            <span id="downloadsSpan" style="display: none;">🔥 Downloads: <b>0</b></span>
           </div>
 
           <div class="qr-container">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://github.com/Satyasundar2005/aptitude-app/releases/download/latest-apk/AptiClash.apk" alt="Scan QR to download APK on Phone">
+            <img id="qrCodeImg" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://github.com/Satyasundar2005/aptitude-app/releases/download/latest-apk/AptiClash.apk" alt="Scan QR to download APK on Phone">
             <div class="qr-label">📲 Scan with your phone camera to download</div>
+          </div>
+
+          <div style="margin-top: 10px;">
+            <a href="https://github.com/Satyasundar2005/aptitude-app/releases" target="_blank" style="color: var(--cyan); font-size: 13px; text-decoration: none;">
+              View all releases & changelogs on GitHub &rarr;
+            </a>
           </div>
         </div>
       </section>
@@ -470,5 +483,89 @@
       </p>
     </footer>
   </div>
+
+  <script>
+    function formatTimeAgo(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+      if (seconds < 60) return 'Just now';
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes} min${minutes > 1 ? 's' : ''} ago`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours} hr${hours > 1 ? 's' : ''} ago`;
+      const days = Math.floor(hours / 24);
+      return `${days} day${days > 1 ? 's' : ''} ago`;
+    }
+
+    async function loadLatestRelease() {
+      const repo = 'Satyasundar2005/aptitude-app';
+      const tag = 'latest-apk';
+      const apiUrl = `https://api.github.com/repos/${repo}/releases/tags/${tag}?_cb=${Date.now()}`;
+
+      try {
+        const res = await fetch(apiUrl, {
+          headers: { 'Accept': 'application/vnd.github.v3+json' }
+        });
+
+        if (!res.ok) throw new Error('Status ' + res.status);
+        const release = await res.json();
+
+        // Locate the .apk asset
+        const apkAsset = (release.assets && release.assets.find(a => a.name.endsWith('.apk'))) || (release.assets && release.assets[0]);
+
+        if (apkAsset) {
+          const downloadUrl = apkAsset.browser_download_url;
+          const sizeMb = (apkAsset.size / (1024 * 1024)).toFixed(1);
+          const downloadCount = apkAsset.download_count || 0;
+          const updatedAt = new Date(apkAsset.updated_at);
+          const timeAgo = formatTimeAgo(updatedAt);
+
+          // Update Download Button
+          const btn = document.getElementById('apkDownloadBtn');
+          const btnText = document.getElementById('btnText');
+          if (btn) btn.href = downloadUrl;
+          if (btnText) btnText.textContent = `Download Android APK (${sizeMb} MB)`;
+
+          // Update Metadata spans
+          const fileSizeEl = document.getElementById('fileSizeSpan');
+          if (fileSizeEl) fileSizeEl.innerHTML = `📦 File Size: <b>${sizeMb} MB</b>`;
+
+          const releaseDateEl = document.getElementById('releaseDateSpan');
+          if (releaseDateEl) releaseDateEl.innerHTML = `🕒 Updated: <b>${timeAgo}</b>`;
+
+          // Update Download counter badge
+          const downloadsSpan = document.getElementById('downloadsSpan');
+          if (downloadsSpan) {
+            downloadsSpan.innerHTML = `🔥 Total Downloads: <b>${downloadCount}</b>`;
+            downloadsSpan.style.display = 'inline-flex';
+          }
+
+          // Update Release Status Pill
+          const statusText = document.getElementById('releaseStatusText');
+          if (statusText) {
+            statusText.textContent = `Release Build Live (${sizeMb} MB • ${timeAgo})`;
+          }
+
+          // Update QR Code
+          const qrEl = document.getElementById('qrCodeImg');
+          if (qrEl) {
+            qrEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(downloadUrl)}`;
+          }
+        }
+      } catch (err) {
+        console.warn('Using default release metadata:', err);
+        const fileSizeEl = document.getElementById('fileSizeSpan');
+        if (fileSizeEl) fileSizeEl.innerHTML = `📦 File Size: <b>Standalone APK</b>`;
+        const releaseDateEl = document.getElementById('releaseDateSpan');
+        if (releaseDateEl) releaseDateEl.innerHTML = `🕒 Updated: <b>Latest Release</b>`;
+      }
+    }
+
+    // Run when DOM loads
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadLatestRelease);
+    } else {
+      loadLatestRelease();
+    }
+  </script>
 </body>
 </html>
