@@ -1,5 +1,14 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Dimensions,
+  Share,
+  Alert,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -21,16 +30,35 @@ import {
   Target,
   Globe,
   Users,
-  Wifi,
   Menu,
   User,
+  Gift,
+  Trophy,
+  Coins,
+  Map,
+  Play,
+  Share2,
+  Copy,
+  Check,
+  Shield,
+  Layers,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+
 import { useGameStore } from '../store/useGameStore';
 import { useUserStore } from '../store/useUserStore';
+import { useRewardsStore } from '../store/useRewardsStore';
+import { useSoloStudyStore } from '../store/useSoloStudyStore';
 import { Difficulty, ExamTrack } from '../types/game';
+import { StudyLevel, StageId } from '../types/soloStudy';
+import { SOLO_CURRICULUM } from '../data/soloCurriculum';
+
 import OnlineLobbyModal from './OnlineLobbyModal';
 import ProfileMenuModal from '../components/ProfileMenuModal';
+import { DailyRewardsModal } from '../components/rewards/DailyRewardsModal';
+import { MatiksJourneyPath } from '../components/solo/MatiksJourneyPath';
+import { LessonInteractiveModal } from '../components/solo/LessonInteractiveModal';
+import { AuthOnboardingModal } from '../components/auth/AuthOnboardingModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -60,13 +88,7 @@ const EXAM_TRACKS: ExamTrackConfig[] = [
     color: '#38bdf8',
     gradient: ['#0284c7', '#0369a1'],
     icon: GraduationCap,
-    topics: [
-      'Work & Time',
-      'Speed & Distance',
-      'Probability',
-      'Spatial & Geometry',
-      'Modular Math',
-    ],
+    topics: ['Work & Time', 'Speed & Distance', 'Probability', 'Spatial & Geometry', 'Modular Math'],
   },
   {
     id: 'cat',
@@ -86,13 +108,7 @@ const EXAM_TRACKS: ExamTrackConfig[] = [
     color: '#06b6d4',
     gradient: ['#0891b2', '#0e7490'],
     icon: Target,
-    topics: [
-      'Quant Comparison',
-      'Data Interpretation',
-      'Algebra & Word',
-      'Geometry',
-      'Number Properties',
-    ],
+    topics: ['Quant Comparison', 'Data Interpretation', 'Algebra & Word', 'Geometry', 'Number Properties'],
   },
   {
     id: 'ese',
@@ -102,13 +118,7 @@ const EXAM_TRACKS: ExamTrackConfig[] = [
     color: '#f97316',
     gradient: ['#ea580c', '#c2410c'],
     icon: Compass,
-    topics: [
-      'PERT & CPM',
-      'Quality & Six Sigma',
-      'Engineering Ethics',
-      'Analytical Ability',
-      'Energy & Env',
-    ],
+    topics: ['PERT & CPM', 'Quality & Six Sigma', 'Engineering Ethics', 'Analytical Ability', 'Energy & Env'],
   },
   {
     id: 'placement',
@@ -176,6 +186,16 @@ const DIFFICULTIES: {
   },
 ];
 
+const SOLO_CATEGORY_TABS: { id: string; label: string; stageId?: StageId }[] = [
+  { id: 'all', label: 'All 30 Levels' },
+  { id: 'foundation', label: '🌱 Age 13+ Foundations', stageId: 'foundation' },
+  { id: 'core_logic', label: '🔭 Gr 9-10 Core Logic', stageId: 'core_logic' },
+  { id: 'campus_placement', label: '💼 Campus Placements', stageId: 'campus_placement' },
+  { id: 'banking_govt', label: '🏛️ Banking & Govt', stageId: 'banking_govt' },
+  { id: 'gate_ese', label: '⚙️ GATE & ESE', stageId: 'gate_ese' },
+  { id: 'cat_elite', label: '👑 CAT 99%ile', stageId: 'cat_elite' },
+];
+
 export default function HomeScreen({ onNavigate }: HomeScreenProps) {
   const {
     examTrack,
@@ -189,349 +209,437 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
   } = useGameStore();
 
   const { profile, settings } = useUserStore();
-  const [selectingFor, setSelectingFor] = useState<'duel' | 'solo' | 'practice' | null>(null);
+  const { tasks, getClaimableCount, checkDailyReset, recordMatchOutcome } = useRewardsStore();
+  const {
+    currentLevel,
+    completedLevels,
+    levelStars,
+    completeLevel,
+    activeCategory,
+    setActiveCategory,
+  } = useSoloStudyStore();
+
+  // Core 3-Feature Tab Selection (Default: 'self_study')
+  const [activeFeature, setActiveFeature] = useState<'self_study' | 'compete' | 'practice'>('self_study');
+
+  // Modals
+  const [showOnboardingModal, setShowOnboardingModal] = useState(
+    !profile.hasCompletedOnboarding && !profile.isLoggedIn
+  );
   const [showOnlineLobby, setShowOnlineLobby] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showDailyRewards, setShowDailyRewards] = useState(false);
+  const [activeLessonLevel, setActiveLessonLevel] = useState<StudyLevel | null>(null);
 
-  const activeTrack = EXAM_TRACKS.find((t) => t.id === examTrack) || EXAM_TRACKS[0];
+  // Question practice selections
+  const [practiceTrack, setPracticeTrack] = useState<ExamTrack>('all');
+  const [practiceDiff, setPracticeDiff] = useState<Difficulty>('medium');
+
+  // Daily reset check on mount
+  useEffect(() => {
+    checkDailyReset();
+  }, []);
+
+  const claimableCount = getClaimableCount();
+  const activeTrackConfig = EXAM_TRACKS.find((t) => t.id === examTrack) || EXAM_TRACKS[0];
+
+  // Current active level object for the Self-Study PLAY button
+  const currentStudyLevel =
+    SOLO_CURRICULUM.find((l) => l.id === currentLevel) || SOLO_CURRICULUM[0];
+
+  // Filtered levels for the Self-Study pathway
+  const filteredLevels =
+    activeCategory === 'all'
+      ? SOLO_CURRICULUM
+      : SOLO_CURRICULUM.filter((lvl) => lvl.stageId === activeCategory);
+
+  const handlePlayCurrentLevel = () => {
+    if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    setActiveLessonLevel(currentStudyLevel);
+  };
+
+  const handleCompleteLesson = (levelId: number, stars: number, xpEarned: number) => {
+    completeLevel(levelId, stars, xpEarned);
+    recordMatchOutcome('study', 'win', { description: `Completed Level ${levelId}` });
+    setActiveLessonLevel(null);
+  };
 
   const handleTrackSelect = (trackId: ExamTrack) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setExamTrack(trackId);
   };
 
-  const handleDifficultySelect = (diff: Difficulty) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setDifficulty(diff);
-    if (selectingFor === 'duel') {
-      startDuel(diff, examTrack);
-      onNavigate('duel');
-    } else if (selectingFor === 'solo') {
-      startSoloBlitz(diff, examTrack);
-      onNavigate('solo');
-    } else {
-      startPractice(diff, examTrack);
-      onNavigate('practice');
-    }
-    setSelectingFor(null);
+  const handleStartSplitScreenDuel = () => {
+    if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    setDifficulty(practiceDiff);
+    startDuel(practiceDiff, examTrack);
+    onNavigate('duel');
   };
 
-  // DIFFICULTY SELECTION VIEW
-  if (selectingFor) {
-    const modeTitle =
-      selectingFor === 'duel'
-        ? 'OFFLINE 1v1 SPLIT SCREEN'
-        : selectingFor === 'solo'
-          ? 'TIMED EXAM SPRINT (10-YR PYQs)'
-          : 'EXAM PRACTICE & 10-YR PYQ DRILL';
+  const handleStartTimedSprint = () => {
+    if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    setDifficulty(practiceDiff);
+    setExamTrack(practiceTrack);
+    startSoloBlitz(practiceDiff, practiceTrack);
+    onNavigate('solo');
+  };
 
-    const ModeIcon = selectingFor === 'duel' ? Swords : selectingFor === 'solo' ? Zap : BookOpen;
+  const handleInviteFriends = async () => {
+    try {
+      if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const code = profile.referralCode || 'CLASH-2026';
+      await Share.share({
+        message: `Join me on AptiClash! 🎯 Practice authentic 10-Yr PYQs & challenge me in real-time 1v1 aptitude duels! My invite code: ${code}. Download: https://appticlash.io`,
+        title: 'Duel me on AptiClash!',
+      });
+    } catch (err) {
+      console.warn('[Share] Invite share canceled or failed:', err);
+    }
+  };
 
-    return (
-      <LinearGradient colors={['#0f172a', '#1e1b4b', '#0f172a']} style={styles.container}>
-        <StatusBar style="light" />
-        <ScrollView
-          contentContainerStyle={styles.difficultyScroll}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Header */}
-          <View style={styles.diffHeaderSection}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setSelectingFor(null);
-              }}
-              activeOpacity={0.7}
-            >
-              <ArrowLeft size={18} color="#94a3b8" />
-              <Text style={styles.backLabel}>Back</Text>
-            </TouchableOpacity>
+  const handleCopyInviteCode = () => {
+    if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.alert('Invite Code', `Your referral code is: ${profile.referralCode || 'CLASH-2026'}\n\nShare this code with friends to earn +50 PTS!`);
+  };
 
-            <View style={styles.selectedTrackPill}>
-              <activeTrack.icon size={13} color={activeTrack.color} style={{ marginRight: 5 }} />
-              <Text style={[styles.selectedTrackPillText, { color: activeTrack.color }]}>
-                {activeTrack.title}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.diffTitleBlock}>
-            <View style={styles.modeIndicatorRow}>
-              <ModeIcon size={20} color="#818cf8" style={{ marginRight: 8 }} />
-              <Text style={styles.modeSubtitle}>{modeTitle}</Text>
-            </View>
-            <Text style={styles.sectionTitle}>Select Pacing & Difficulty</Text>
-            <Text style={styles.sectionDesc}>
-              {selectingFor === 'practice'
-                ? `Practicing authentic 10-year ${activeTrack.title} PYQs with step-by-step solutions and official paper citations.`
-                : selectingFor === 'solo'
-                  ? `10 authentic PYQs under real exam pacing. Timer per question dictates pressure.`
-                  : `Questions will be pulled from 10-year ${activeTrack.title} papers matched to your difficulty.`}
-            </Text>
-          </View>
-
-          {/* Difficulty Cards */}
-          <View style={styles.difficultyList}>
-            {DIFFICULTIES.map((diff) => {
-              const soloPacing =
-                diff.key === 'easy'
-                  ? '60s / question • Foundation level • 10 Questions'
-                  : diff.key === 'medium'
-                    ? '45s / question • GATE & GRE pace • 10 Questions'
-                    : '30s / question • CAT QA & Bank sprint • 10 Questions';
-
-              const soloTag =
-                diff.key === 'easy'
-                  ? '60s / Q (Easy)'
-                  : diff.key === 'medium'
-                    ? '45s / Q (Medium)'
-                    : '30s / Q (Hard)';
-
-              return (
-                <TouchableOpacity
-                  key={diff.key}
-                  style={[styles.difficultyCard, { borderColor: diff.color + '60' }]}
-                  onPress={() => handleDifficultySelect(diff.key)}
-                  activeOpacity={0.8}
-                >
-                  <LinearGradient
-                    colors={[diff.color + '20', diff.color + '06']}
-                    style={styles.difficultyGradient}
-                  >
-                    <View style={styles.diffHeaderRow}>
-                      <View style={styles.diffNameGroup}>
-                        <Text style={[styles.difficultyLabel, { color: diff.color }]}>
-                          {diff.label}
-                        </Text>
-                        <View style={[styles.diffTagBadge, { backgroundColor: diff.color + '20' }]}>
-                          <Text style={[styles.diffTagText, { color: diff.color }]}>
-                            {selectingFor === 'solo' ? soloTag : diff.tag}
-                          </Text>
-                        </View>
-                      </View>
-
-                      <View style={styles.meterContainer}>
-                        {[1, 2, 3].map((i) => (
-                          <View
-                            key={i}
-                            style={[
-                              styles.meterBar,
-                              { backgroundColor: i <= diff.meter ? diff.color : '#334155' },
-                            ]}
-                          />
-                        ))}
-                      </View>
-                    </View>
-
-                    <Text style={styles.difficultyDesc}>
-                      {selectingFor === 'solo' ? soloPacing : diff.desc}
-                    </Text>
-
-                    <View style={styles.startRow}>
-                      <Text style={[styles.startText, { color: diff.color }]}>
-                        {selectingFor === 'practice'
-                          ? 'Start Practice'
-                          : selectingFor === 'solo'
-                            ? 'Start 10-Q Sprint'
-                            : 'Tap to Begin'}
-                      </Text>
-                      <ChevronRight size={16} color={diff.color} />
-                    </View>
-                  </LinearGradient>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </ScrollView>
-      </LinearGradient>
-    );
-  }
-
-  // MAIN HOME VIEW
   return (
     <LinearGradient colors={['#0f172a', '#1e1b4b', '#0f172a']} style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Online Room Lobby Modal */}
+      {/* 1. Onboarding Modal for First Time Open */}
+      <AuthOnboardingModal
+        visible={showOnboardingModal}
+        onClose={() => setShowOnboardingModal(false)}
+      />
+
+      {/* 2. Online Multiplayer Lobby Modal */}
       <OnlineLobbyModal
         visible={showOnlineLobby}
         onClose={() => setShowOnlineLobby(false)}
         onStartMatch={() => onNavigate('online')}
         selectedTrack={examTrack}
-        selectedDifficulty="medium"
+        selectedDifficulty={practiceDiff}
       />
 
-      {/* Profile, Settings & Account Drawer Modal */}
+      {/* 3. Profile & Settings Drawer Modal */}
       <ProfileMenuModal
         visible={showProfileMenu}
         onClose={() => setShowProfileMenu(false)}
         onNavigate={onNavigate}
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Top App Bar with Top-Left Menu Option, Branding and Stats */}
-        <View style={styles.topHeader}>
-          {/* Top-Left Menu Option with User Icon / Avatar */}
-          <View style={styles.topLeftGroup}>
-            <TouchableOpacity
-              style={styles.menuTriggerButton}
-              onPress={() => {
-                if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setShowProfileMenu(true);
-              }}
-              activeOpacity={0.75}
-              accessibilityLabel="Open Account Menu and Profile"
-            >
-              <Menu size={18} color="#cbd5e1" />
-              <View style={styles.avatarIconRing}>
-                <Text style={styles.avatarIconText}>{profile.avatar || '🎓'}</Text>
-              </View>
-            </TouchableOpacity>
+      {/* 4. Rewards & Tasks Modal */}
+      <DailyRewardsModal
+        visible={showDailyRewards}
+        onClose={() => setShowDailyRewards(false)}
+      />
 
-            <View style={styles.brandTextGroup}>
-              <Text style={styles.brandTitle}>APTICLASH</Text>
-              <Text style={styles.brandSubtitle}>
-                {profile.isLoggedIn ? `Hi, ${profile.name.split(' ')[0]}` : 'Aptitude Duels'}
-              </Text>
-            </View>
-          </View>
+      {/* 5. Interactive Lesson Modal for Self-Study */}
+      <LessonInteractiveModal
+        level={activeLessonLevel}
+        visible={!!activeLessonLevel}
+        onClose={() => setActiveLessonLevel(null)}
+        onLevelCompleted={(levelId) => handleCompleteLesson(levelId, 3, 50)}
+      />
 
-          {/* Quick Stats Pill */}
-          <TouchableOpacity
-            style={styles.statsPill}
-            onPress={() => {
-              if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setShowProfileMenu(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <View style={styles.statItem}>
-              <CheckCircle2 size={13} color="#10b981" />
-              <Text style={styles.statValue}>{totalSolved}</Text>
-              <Text style={styles.statLabel}>Solved</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Flame size={13} color="#f59e0b" />
-              <Text style={styles.statValue}>{bestStreak}</Text>
-              <Text style={styles.statLabel}>Streak</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Hero Banner */}
-        <View style={styles.heroCard}>
-          <LinearGradient
-            colors={['rgba(99, 102, 241, 0.25)', 'rgba(30, 27, 75, 0.4)']}
-            style={styles.heroGradient}
-          >
-            <View style={styles.heroBadge}>
-              <Sparkles size={12} color="#f59e0b" style={{ marginRight: 4 }} />
-              <Text style={styles.heroBadgeText}>GATE • CAT • ESE • PLACEMENTS • BANK</Text>
-            </View>
-            <Text style={styles.heroTitle}>Duel With Friends Online or Offline</Text>
-            <Text style={styles.heroDesc}>
-              Play online with friends via room codes, duel face-to-face on one device offline, or
-              drill PYQs solo.
-            </Text>
-          </LinearGradient>
-        </View>
-
-        {/* Target Exam Track Selector */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionHeading}>SELECT EXAM TRACK</Text>
-          <Text style={styles.sectionSubBadge}>{activeTrack.badge}</Text>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tracksScroll}
+      {/* ========================================================================= */}
+      {/* TOP APP BAR: [Menu Button (Left)]  APTICLASH (Middle)  [Rewards (Right)] */}
+      {/* ========================================================================= */}
+      <View style={styles.topHeader}>
+        {/* LEFT: Menu Button with User Icon & Avatar */}
+        <TouchableOpacity
+          style={styles.menuTriggerButton}
+          onPress={() => {
+            if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setShowProfileMenu(true);
+          }}
+          activeOpacity={0.75}
+          accessibilityLabel="Open Account Menu and Profile"
         >
-          {EXAM_TRACKS.map((track) => {
-            const isSelected = examTrack === track.id;
-            const Icon = track.icon;
+          <Menu size={18} color="#cbd5e1" />
+          <View style={styles.avatarIconRing}>
+            <Text style={styles.avatarIconText}>{profile.avatar || '🎓'}</Text>
+          </View>
+        </TouchableOpacity>
 
-            return (
+        {/* TOP MIDDLE: Name of the App */}
+        <View style={styles.headerCenter}>
+          <Text style={styles.brandTitle}>APTICLASH</Text>
+          <View style={styles.headerSubtitleRow}>
+            <View style={styles.onlineDot} />
+            <Text style={styles.brandSubtitle}>
+              {activeFeature === 'self_study'
+                ? 'Self-Study Road'
+                : activeFeature === 'compete'
+                  ? 'Compete Arena'
+                  : 'Timed Sprint'}
+            </Text>
+          </View>
+        </View>
+
+        {/* RIGHT: Rewards Points Button */}
+        <TouchableOpacity
+          style={styles.rewardsTopButton}
+          onPress={() => {
+            if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setShowDailyRewards(true);
+          }}
+          activeOpacity={0.8}
+          accessibilityLabel="View Reward Points and Quests"
+        >
+          <View style={styles.rewardCoinCircle}>
+            <Coins size={14} color="#f59e0b" />
+          </View>
+          <View style={styles.rewardsPointsCol}>
+            <Text style={styles.rewardsPointsVal}>{profile.rating || 1200}</Text>
+            <Text style={styles.rewardsPointsLabel}>PTS</Text>
+          </View>
+          {claimableCount > 0 && (
+            <View style={styles.claimableBadgeDot}>
+              <Text style={styles.claimableBadgeText}>{claimableCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {/* ========================================================================= */}
+      {/* 3-FEATURE NAVIGATION SWITCHER                                             */}
+      {/* 1. Self-Study (Default) | 2. Compete with Friends | 3. Question Practice */}
+      {/* ========================================================================= */}
+      <View style={styles.featureTabsBar}>
+        {/* Feature 1: Self-Study (Default) */}
+        <TouchableOpacity
+          style={[styles.featureTabBtn, activeFeature === 'self_study' && styles.featureTabBtnActive]}
+          onPress={() => {
+            if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setActiveFeature('self_study');
+          }}
+          activeOpacity={0.8}
+        >
+          <Map
+            size={14}
+            color={activeFeature === 'self_study' ? '#38bdf8' : '#64748b'}
+            style={{ marginRight: 6 }}
+          />
+          <Text
+            style={[
+              styles.featureTabBtnText,
+              activeFeature === 'self_study' && styles.featureTabBtnTextActive,
+            ]}
+          >
+            Self-Study
+          </Text>
+        </TouchableOpacity>
+
+        {/* Feature 2: Compete with Friends */}
+        <TouchableOpacity
+          style={[styles.featureTabBtn, activeFeature === 'compete' && styles.featureTabBtnActive]}
+          onPress={() => {
+            if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setActiveFeature('compete');
+          }}
+          activeOpacity={0.8}
+        >
+          <Swords
+            size={14}
+            color={activeFeature === 'compete' ? '#f472b6' : '#64748b'}
+            style={{ marginRight: 6 }}
+          />
+          <Text
+            style={[
+              styles.featureTabBtnText,
+              activeFeature === 'compete' && styles.featureTabBtnTextActive,
+            ]}
+          >
+            Compete
+          </Text>
+        </TouchableOpacity>
+
+        {/* Feature 3: Question Practice */}
+        <TouchableOpacity
+          style={[styles.featureTabBtn, activeFeature === 'practice' && styles.featureTabBtnActive]}
+          onPress={() => {
+            if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setActiveFeature('practice');
+          }}
+          activeOpacity={0.8}
+        >
+          <Zap
+            size={14}
+            color={activeFeature === 'practice' ? '#fbbf24' : '#64748b'}
+            style={{ marginRight: 6 }}
+          />
+          <Text
+            style={[
+              styles.featureTabBtnText,
+              activeFeature === 'practice' && styles.featureTabBtnTextActive,
+            ]}
+          >
+            Practice
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* ========================================================================= */}
+      {/* FEATURE 1 VIEW: SELF-STUDY (SOLO STUDY PATHWAY - DEFAULT)                */}
+      {/* ========================================================================= */}
+      {activeFeature === 'self_study' && (
+        <View style={styles.selfStudyWrapper}>
+          {/* Category Filter Horizontal Scroll */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryPillsScroll}
+          >
+            {SOLO_CATEGORY_TABS.map((cat) => {
+              const isSelected = activeCategory === (cat.stageId || 'all');
+              return (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={[styles.categoryPill, isSelected && styles.categoryPillActive]}
+                  onPress={() => {
+                    if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setActiveCategory(cat.stageId || 'all');
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.categoryPillText, isSelected && styles.categoryPillTextActive]}>
+                    {cat.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          {/* Gamified Stepping Stone Roadmap */}
+          <MatiksJourneyPath
+            levels={filteredLevels}
+            currentLevel={currentLevel}
+            completedLevels={completedLevels}
+            levelStars={levelStars}
+            userAvatar={profile.avatar || '🎓'}
+            onSelectLevel={(level) => setActiveLessonLevel(level)}
+          />
+
+          {/* Floating Bottom Action Bar: Big PLAY Button matching reference screenshot */}
+          <View style={styles.bottomPlayBar}>
+            <View style={styles.playBarInner}>
+              {/* Stage level square badge on left */}
+              <View style={styles.stageIndicatorSquare}>
+                <Text style={styles.stageIndicatorLabel}>LVL</Text>
+                <Text style={styles.stageIndicatorNum}>{currentLevel}</Text>
+              </View>
+
+              {/* Big prominent PLAY button */}
               <TouchableOpacity
-                key={track.id}
-                style={[
-                  styles.trackCard,
-                  isSelected && { borderColor: track.color, borderWidth: 1.8 },
-                ]}
-                onPress={() => handleTrackSelect(track.id)}
-                activeOpacity={0.8}
+                style={styles.bigPlayButton}
+                onPress={handlePlayCurrentLevel}
+                activeOpacity={0.85}
               >
                 <LinearGradient
-                  colors={
-                    isSelected ? track.gradient : ['rgba(30, 41, 59, 0.7)', 'rgba(15, 23, 42, 0.8)']
-                  }
-                  style={styles.trackGradient}
+                  colors={['#6366f1', '#4f46e5', '#3730a3']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.bigPlayGradient}
                 >
-                  <View style={styles.trackIconBox}>
-                    <Icon size={20} color={isSelected ? '#ffffff' : track.color} />
-                  </View>
-                  <Text style={[styles.trackCardTitle, isSelected && { color: '#ffffff' }]}>
-                    {track.title}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.trackCardSubtitle,
-                      isSelected && { color: 'rgba(255,255,255,0.85)' },
-                    ]}
-                  >
-                    {track.subtitle}
-                  </Text>
+                  <Play size={20} color="#ffffff" fill="#ffffff" style={{ marginRight: 8 }} />
+                  <Text style={styles.bigPlayText}>PLAY LEVEL {currentLevel}</Text>
                 </LinearGradient>
               </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
-        {/* Selected Track Topics Chips & Quick Practice Launch */}
-        <View style={styles.topicsContainer}>
-          <View style={styles.topicsHeaderRow}>
-            <BookOpen size={13} color="#94a3b8" style={{ marginRight: 6 }} />
-            <Text style={styles.topicsLabel}>Curriculum for {activeTrack.title}:</Text>
+            </View>
           </View>
-          <View style={styles.topicsChipsRow}>
-            {activeTrack.topics.map((topic, i) => (
-              <View key={i} style={[styles.topicChip, { borderColor: activeTrack.color + '40' }]}>
-                <Text style={[styles.topicChipText, { color: activeTrack.color }]}>{topic}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Quick Practice Trigger Button */}
-          <TouchableOpacity
-            style={[
-              styles.quickPracticeBtn,
-              { backgroundColor: activeTrack.color + '20', borderColor: activeTrack.color + '50' },
-            ]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              onNavigate('practice');
-            }}
-            activeOpacity={0.8}
-          >
-            <Target size={15} color={activeTrack.color} />
-            <Text style={[styles.quickPracticeText, { color: activeTrack.color }]}>
-              Solo Study Pathway: Age 13+ to CAT 99%ile
-            </Text>
-            <ArrowRight size={14} color={activeTrack.color} />
-          </TouchableOpacity>
         </View>
+      )}
 
-        {/* Game Mode Cards */}
-        <View style={styles.modesSection}>
-          <Text style={styles.sectionHeading}>CHOOSE BATTLE MODE</Text>
+      {/* ========================================================================= */}
+      {/* FEATURE 2 VIEW: COMPETE WITH FRIENDS                                     */}
+      {/* (Play Online, Play Offline 1v1 Split Screen, Invite Friends, Track)      */}
+      {/* ========================================================================= */}
+      {activeFeature === 'compete' && (
+        <ScrollView contentContainerStyle={styles.featureScroll} showsVerticalScrollIndicator={false}>
+          {/* Header Banner */}
+          <View style={styles.competeHeaderBox}>
+            <View style={styles.featureHeaderBadge}>
+              <Swords size={12} color="#f472b6" style={{ marginRight: 5 }} />
+              <Text style={styles.featureHeaderBadgeText}>ONLINE & OFFLINE PVP</Text>
+            </View>
+            <Text style={styles.featureTitle}>Compete with Friends</Text>
+            <Text style={styles.featureDesc}>
+              Duel friends online via room codes, play face-to-face on one phone offline, or invite classmates!
+            </Text>
+          </View>
 
-          {/* 🌐 1. ONLINE MULTIPLAYER WITH FRIENDS (DEFAULT) */}
+          {/* 1. SELECT EXAM TRACK IN COMPETE WITH FRIENDS */}
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionHeading}>SELECT EXAM TRACK FOR BATTLE</Text>
+            <Text style={styles.sectionSubBadge}>{activeTrackConfig.badge}</Text>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tracksScroll}
+          >
+            {EXAM_TRACKS.map((track) => {
+              const isSelected = examTrack === track.id;
+              const Icon = track.icon;
+
+              return (
+                <TouchableOpacity
+                  key={track.id}
+                  style={[
+                    styles.trackCard,
+                    isSelected && { borderColor: track.color, borderWidth: 1.8 },
+                  ]}
+                  onPress={() => handleTrackSelect(track.id)}
+                  activeOpacity={0.8}
+                >
+                  <LinearGradient
+                    colors={
+                      isSelected ? track.gradient : ['rgba(30, 41, 59, 0.7)', 'rgba(15, 23, 42, 0.8)']
+                    }
+                    style={styles.trackGradient}
+                  >
+                    <View style={styles.trackIconBox}>
+                      <Icon size={20} color={isSelected ? '#ffffff' : track.color} />
+                    </View>
+                    <Text style={[styles.trackCardTitle, isSelected && { color: '#ffffff' }]}>
+                      {track.title}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.trackCardSubtitle,
+                        isSelected && { color: 'rgba(255,255,255,0.85)' },
+                      ]}
+                    >
+                      {track.subtitle}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          {/* Selected Track Topics Chips */}
+          <View style={styles.topicsContainer}>
+            <View style={styles.topicsHeaderRow}>
+              <BookOpen size={13} color="#94a3b8" style={{ marginRight: 6 }} />
+              <Text style={styles.topicsLabel}>Duel Syllabus for {activeTrackConfig.title}:</Text>
+            </View>
+            <View style={styles.topicsChipsRow}>
+              {activeTrackConfig.topics.map((topic, i) => (
+                <View key={i} style={[styles.topicChip, { borderColor: activeTrackConfig.color + '40' }]}>
+                  <Text style={[styles.topicChipText, { color: activeTrackConfig.color }]}>{topic}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* 2. PLAY ONLINE WITH FRIENDS (DEFAULT FEATURED CARD) */}
           <TouchableOpacity
             style={styles.onlineFeaturedCard}
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+              if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
               setShowOnlineLobby(true);
             }}
             activeOpacity={0.85}
@@ -544,24 +652,22 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
             >
               <View style={styles.onlineBadgeRow}>
                 <View style={styles.onlineLiveDot} />
-                <Text style={styles.onlineLiveBadge}>ONLINE MULTIPLAYER • DEFAULT</Text>
+                <Text style={styles.onlineLiveBadge}>PLAY ONLINE WITH FRIENDS</Text>
               </View>
 
               <View style={styles.onlineMainRow}>
                 <View style={styles.onlineIconCircle}>
-                  <Globe size={30} color="#ffffff" />
+                  <Globe size={28} color="#ffffff" />
                 </View>
 
                 <View style={styles.onlineTextGroup}>
-                  <Text style={styles.onlineTitle}>PLAY ONLINE WITH FRIENDS</Text>
+                  <Text style={styles.onlineTitle}>HOST OR JOIN ONLINE ROOM</Text>
                   <Text style={styles.onlineDesc}>
-                    Create a private room, share room code with your friends, or match against live
-                    online rivals in {activeTrack.title}!
+                    Create a private room, share the 6-letter code with a friend, or match against live aspirants in {activeTrackConfig.title}!
                   </Text>
                 </View>
               </View>
 
-              {/* Action Pills */}
               <View style={styles.onlineActionPillsRow}>
                 <View style={styles.actionPill}>
                   <Users size={12} color="#c7d2fe" style={{ marginRight: 4 }} />
@@ -578,13 +684,10 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
             </LinearGradient>
           </TouchableOpacity>
 
-          {/* 📱 2. OFFLINE 1v1 SPLIT SCREEN (PRESERVED ON SAME DEVICE) */}
+          {/* 3. PLAY OFFLINE WITH FRIENDS (1v1 SPLIT SCREEN) */}
           <TouchableOpacity
             style={styles.offlineCard}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              setSelectingFor('duel');
-            }}
+            onPress={handleStartSplitScreenDuel}
             activeOpacity={0.85}
           >
             <LinearGradient
@@ -593,22 +696,19 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
               end={{ x: 1, y: 1 }}
               style={styles.modeCardGradient}
             >
-              <View
-                style={[styles.modeIconCircle, { backgroundColor: 'rgba(244, 114, 182, 0.2)' }]}
-              >
+              <View style={[styles.modeIconCircle, { backgroundColor: 'rgba(244, 114, 182, 0.2)' }]}>
                 <Swords size={24} color="#f472b6" />
               </View>
 
               <View style={styles.modeTextGroup}>
                 <View style={styles.modeTitleRow}>
-                  <Text style={styles.modeTitle}>1v1 SPLIT SCREEN (OFFLINE)</Text>
+                  <Text style={styles.modeTitle}>PLAY OFFLINE (1v1 SPLIT SCREEN)</Text>
                   <View style={[styles.modeTag, { backgroundColor: 'rgba(244, 114, 182, 0.25)' }]}>
-                    <Text style={[styles.modeTagText, { color: '#f472b6' }]}>SAME DEVICE</Text>
+                    <Text style={[styles.modeTagText, { color: '#f472b6' }]}>SAME PHONE</Text>
                   </View>
                 </View>
                 <Text style={styles.modeDesc}>
-                  Play with friends offline on one phone or tablet. Dual-rotated screen for
-                  face-to-face tabletop dueling.
+                  Play face-to-face tabletop style on one phone or tablet. The top half rotates 180° for your opponent!
                 </Text>
               </View>
 
@@ -616,93 +716,212 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
             </LinearGradient>
           </TouchableOpacity>
 
-          {/* 🎯 3. SOLO STUDY PATHWAY (BRILLIANT / MATIKS STYLE) */}
-          <TouchableOpacity
-            style={styles.practiceCard}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              onNavigate('practice');
-            }}
-            activeOpacity={0.85}
-          >
+          {/* 4. OPTION TO INVITE FRIENDS WHO ARE NOT YET USING THE APP */}
+          <View style={styles.inviteFriendsCard}>
             <LinearGradient
-              colors={['#0284c7', '#0369a1']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.modeCardGradient}
+              colors={['rgba(245, 158, 11, 0.18)', 'rgba(234, 88, 12, 0.08)']}
+              style={styles.inviteGradient}
             >
-              <View
-                style={[styles.modeIconCircle, { backgroundColor: 'rgba(255, 255, 255, 0.25)' }]}
-              >
-                <BookOpen size={24} color="#ffffff" />
+              <View style={styles.inviteHeaderRow}>
+                <View style={styles.inviteIconBox}>
+                  <Share2 size={20} color="#fbbf24" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.inviteTitle}>Invite Friends to ApptiClash</Text>
+                  <Text style={styles.inviteDesc}>
+                    Invite classmates & friends who are not using the app yet. Earn +50 PTS when they join!
+                  </Text>
+                </View>
               </View>
 
-              <View style={styles.modeTextGroup}>
-                <View style={styles.modeTitleRow}>
-                  <Text style={styles.modeTitle}>SOLO STUDY PATHWAY</Text>
-                  <View style={[styles.modeTag, { backgroundColor: '#38bdf8' }]}>
-                    <Text style={[styles.modeTagText, { color: '#0f172a' }]}>
-                      BRILLIANT & MATIKS
+              <View style={styles.referralCodeBox}>
+                <View>
+                  <Text style={styles.referralCodeLabel}>YOUR INVITE CODE</Text>
+                  <Text style={styles.referralCodeVal}>{profile.referralCode || 'CLASH-2026'}</Text>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.copyCodeBtn}
+                  onPress={handleCopyInviteCode}
+                  activeOpacity={0.75}
+                >
+                  <Copy size={13} color="#fbbf24" style={{ marginRight: 4 }} />
+                  <Text style={styles.copyCodeBtnText}>Copy Code</Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={styles.shareInviteBtn}
+                onPress={handleInviteFriends}
+                activeOpacity={0.85}
+              >
+                <Share2 size={16} color="#0f172a" style={{ marginRight: 6 }} />
+                <Text style={styles.shareInviteBtnText}>Share Invite Link with Friends ➔</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
+        </ScrollView>
+      )}
+
+      {/* ========================================================================= */}
+      {/* FEATURE 3 VIEW: QUESTION PRACTICE (TIMED EXAM SPRINT)                     */}
+      {/* (Specific Exam Oriented or Miscellaneous All-Exams Option)                */}
+      {/* ========================================================================= */}
+      {activeFeature === 'practice' && (
+        <ScrollView contentContainerStyle={styles.featureScroll} showsVerticalScrollIndicator={false}>
+          {/* Header */}
+          <View style={styles.practiceHeaderBox}>
+            <View style={styles.practiceBadge}>
+              <Zap size={12} color="#fbbf24" style={{ marginRight: 5 }} />
+              <Text style={styles.practiceBadgeText}>TIMED EXAM SPRINT</Text>
+            </View>
+            <Text style={styles.featureTitle}>Question Practice</Text>
+            <Text style={styles.featureDesc}>
+              10 authentic PYQs under strict timer pressure (30s / 45s / 60s per Q). Review full step-by-step solutions at the end!
+            </Text>
+          </View>
+
+          {/* 1. SELECT EXAM TRACK (SPECIFIC OR MISCELLANEOUS) */}
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionHeading}>SELECT PRACTICE TRACK</Text>
+            <Text style={styles.sectionSubBadge}>
+              {practiceTrack === 'all' ? 'Universal Mix' : 'Exam-Specific'}
+            </Text>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tracksScroll}
+          >
+            {EXAM_TRACKS.map((track) => {
+              const isSelected = practiceTrack === track.id;
+              const Icon = track.icon;
+              const isMisc = track.id === 'all';
+
+              return (
+                <TouchableOpacity
+                  key={track.id}
+                  style={[
+                    styles.trackCard,
+                    isSelected && { borderColor: track.color, borderWidth: 1.8 },
+                  ]}
+                  onPress={() => {
+                    if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setPracticeTrack(track.id);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <LinearGradient
+                    colors={
+                      isSelected ? track.gradient : ['rgba(30, 41, 59, 0.7)', 'rgba(15, 23, 42, 0.8)']
+                    }
+                    style={styles.trackGradient}
+                  >
+                    <View style={styles.trackIconBox}>
+                      <Icon size={20} color={isSelected ? '#ffffff' : track.color} />
+                    </View>
+                    <Text style={[styles.trackCardTitle, isSelected && { color: '#ffffff' }]}>
+                      {track.title}
                     </Text>
-                  </View>
-                </View>
-                <Text style={styles.modeDesc}>
-                  Learn Aptitude & Reasoning from age 13 basics to CAT 99%ile step-by-step. 30
-                  progressive levels with mental models, intuition & 10-Yr PYQs.
-                </Text>
-              </View>
+                    <Text
+                      style={[
+                        styles.trackCardSubtitle,
+                        isSelected && { color: 'rgba(255,255,255,0.85)' },
+                      ]}
+                    >
+                      {isMisc ? '✨ Miscellaneous Mix' : track.subtitle}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
 
-              <ChevronRight size={20} color="#ffffff" />
-            </LinearGradient>
-          </TouchableOpacity>
+          {/* 2. SELECT PACING & DIFFICULTY */}
+          <View style={[styles.sectionHeaderRow, { marginTop: 14 }]}>
+            <Text style={styles.sectionHeading}>SELECT PACING & DIFFICULTY</Text>
+          </View>
 
-          {/* ⚡ 4. TIMED EXAM SPRINT (GATE • CAT • GRE) */}
+          <View style={styles.diffCardsCol}>
+            {DIFFICULTIES.map((diff) => {
+              const isSelected = practiceDiff === diff.key;
+              const pacingText =
+                diff.key === 'easy'
+                  ? '60s per question • 10 Questions • Foundation & Placement screening'
+                  : diff.key === 'medium'
+                    ? '45s per question • 10 Questions • GATE, GRE & Bank PO standard'
+                    : '30s per question • 10 Questions • CAT QA 99%ile & Speed math gauntlet';
+
+              return (
+                <TouchableOpacity
+                  key={diff.key}
+                  style={[
+                    styles.practiceDiffCard,
+                    isSelected && { borderColor: diff.color, borderWidth: 1.8 },
+                  ]}
+                  onPress={() => {
+                    if (settings.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    setPracticeDiff(diff.key);
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <LinearGradient
+                    colors={[
+                      isSelected ? diff.color + '25' : 'rgba(30, 41, 59, 0.6)',
+                      'rgba(15, 23, 42, 0.8)',
+                    ]}
+                    style={styles.diffCardGradient}
+                  >
+                    <View style={styles.diffCardTopRow}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Text style={[styles.diffCardLabel, { color: diff.color }]}>
+                          {diff.label}
+                        </Text>
+                        <View style={[styles.diffCardBadge, { backgroundColor: diff.color + '20' }]}>
+                          <Text style={[styles.diffCardBadgeText, { color: diff.color }]}>
+                            {diff.tag}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {isSelected && <Check size={18} color={diff.color} />}
+                    </View>
+
+                    <Text style={styles.diffCardPacing}>{pacingText}</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* 3. START SPRINT BUTTON */}
           <TouchableOpacity
-            style={styles.blitzCard}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              setSelectingFor('solo');
-            }}
+            style={styles.startSprintBtn}
+            onPress={handleStartTimedSprint}
             activeOpacity={0.85}
           >
             <LinearGradient
-              colors={['#be185d', '#831843']}
+              colors={['#be185d', '#ec4899', '#831843']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={styles.modeCardGradient}
+              style={styles.startSprintGradient}
             >
-              <View
-                style={[styles.modeIconCircle, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}
-              >
-                <Zap size={24} color="#ffffff" />
-              </View>
-
-              <View style={styles.modeTextGroup}>
-                <View style={styles.modeTitleRow}>
-                  <Text style={styles.modeTitle}>TIMED EXAM SPRINT</Text>
-                  <View style={[styles.modeTag, { backgroundColor: 'rgba(255, 255, 255, 0.25)' }]}>
-                    <Text style={styles.modeTagText}>10 QUESTIONS</Text>
-                  </View>
-                </View>
-                <Text style={styles.modeDesc}>
-                  Single-player test simulator under strict GATE/CAT/GRE time limits (30s / 45s /
-                  60s per Q). Review solutions at the end!
+              <Zap size={22} color="#ffffff" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.startSprintTitle}>START 10-QUESTION SPRINT</Text>
+                <Text style={styles.startSprintSub}>
+                  {practiceTrack === 'all'
+                    ? 'Universal 10-Yr PYQ Mix'
+                    : `${practiceTrack.toUpperCase()} 10-Yr PYQs`}{' '}
+                  • {practiceDiff.toUpperCase()} PACE
                 </Text>
               </View>
-
-              <ChevronRight size={20} color="#ffffff" />
+              <ArrowRight size={20} color="#ffffff" />
             </LinearGradient>
           </TouchableOpacity>
-        </View>
-
-        {/* Footer info */}
-        <View style={styles.footer}>
-          <Text style={styles.footerBrand}>APTICLASH 2026</Text>
-          <Text style={styles.footerText}>
-            Online Multiplayer & Offline Split-Screen for GATE, CAT, ESE & Placements.
-          </Text>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      )}
     </LinearGradient>
   );
 }
@@ -711,28 +930,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollContent: {
-    paddingTop: 54,
-    paddingBottom: 40,
-    paddingHorizontal: 20,
-  },
+  // ===================================================
+  // TOP APP BAR STYLES
+  // ===================================================
   topHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
-  },
-  topLeftGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+    paddingTop: 52,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   menuTriggerButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(30, 41, 59, 0.85)',
-    paddingHorizontal: 9,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: 'rgba(99, 102, 241, 0.4)',
@@ -751,78 +967,253 @@ const styles = StyleSheet.create({
   avatarIconText: {
     fontSize: 14,
   },
-  brandTextGroup: {
-    justifyContent: 'center',
-  },
-  brandRow: {
-    flexDirection: 'row',
+  headerCenter: {
     alignItems: 'center',
-    gap: 12,
-  },
-  logoIconGlow: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(99, 102, 241, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.4)',
   },
   brandTitle: {
     fontSize: 20,
     fontWeight: '900',
     color: '#ffffff',
-    letterSpacing: 1.2,
+    letterSpacing: 2,
+  },
+  headerSubtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 1,
+  },
+  onlineDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#10b981',
   },
   brandSubtitle: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '700',
     color: '#94a3b8',
     letterSpacing: 0.3,
   },
-  statsPill: {
+  rewardsTopButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(30, 41, 59, 0.7)',
+    backgroundColor: 'rgba(30, 41, 59, 0.85)',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
     borderRadius: 14,
-    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.4)',
+    gap: 5,
+    position: 'relative',
+  },
+  rewardCoinCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  rewardsPointsCol: {
+    alignItems: 'flex-start',
+  },
+  rewardsPointsVal: {
+    color: '#f8fafc',
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 14,
+  },
+  rewardsPointsLabel: {
+    color: '#f59e0b',
+    fontSize: 9,
+    fontWeight: '800',
+    lineHeight: 10,
+  },
+  claimableBadgeDot: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#ef4444',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#0f172a',
+  },
+  claimableBadgeText: {
+    color: '#ffffff',
+    fontSize: 9,
+    fontWeight: '900',
+  },
+
+  // ===================================================
+  // 3-FEATURE TABS BAR
+  // ===================================================
+  featureTabsBar: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+  },
+  featureTabBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 9,
+    borderRadius: 12,
+    backgroundColor: 'rgba(30, 41, 59, 0.5)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  featureTabBtnActive: {
+    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+    borderColor: 'rgba(99, 102, 241, 0.5)',
+  },
+  featureTabBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748b',
+  },
+  featureTabBtnTextActive: {
+    color: '#ffffff',
+    fontWeight: '800',
+  },
+
+  // ===================================================
+  // FEATURE 1: SELF-STUDY STYLES
+  // ===================================================
+  selfStudyWrapper: {
+    flex: 1,
+    position: 'relative',
+  },
+  categoryPillsScroll: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  categoryPill: {
+    paddingHorizontal: 12,
     paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: 'rgba(30, 41, 59, 0.6)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  categoryPillActive: {
+    backgroundColor: 'rgba(6, 182, 212, 0.2)',
+    borderColor: '#06b6d4',
   },
-  statValue: {
-    color: '#f8fafc',
-    fontSize: 12,
+  categoryPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#94a3b8',
+  },
+  categoryPillTextActive: {
+    color: '#38bdf8',
     fontWeight: '800',
   },
-  statLabel: {
-    color: '#64748b',
-    fontSize: 10,
-    fontWeight: '600',
+  bottomPlayBar: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 20,
+    zIndex: 100,
   },
-  statDivider: {
-    width: 1,
-    height: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    marginHorizontal: 8,
+  playBarInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
-  heroCard: {
-    borderRadius: 20,
+  stageIndicatorSquare: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: '#1e293b',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+  },
+  stageIndicatorLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#94a3b8',
+  },
+  stageIndicatorNum: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#38bdf8',
+  },
+  bigPlayButton: {
+    flex: 1,
+    height: 52,
+    borderRadius: 16,
     overflow: 'hidden',
-    marginBottom: 24,
+    elevation: 8,
+    shadowColor: '#6366f1',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#818cf8',
+  },
+  bigPlayGradient: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bigPlayText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+
+  // ===================================================
+  // FEATURE 2 & 3 COMMON SCROLL CONTENT
+  // ===================================================
+  featureScroll: {
+    paddingTop: 16,
+    paddingBottom: 40,
+    paddingHorizontal: 20,
+  },
+  competeHeaderBox: {
+    marginBottom: 20,
+  },
+  practiceHeaderBox: {
+    marginBottom: 20,
+  },
+  featureHeaderBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(244, 114, 182, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginBottom: 6,
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.3)',
+    borderColor: 'rgba(244, 114, 182, 0.3)',
   },
-  heroGradient: {
-    padding: 18,
+  featureHeaderBadgeText: {
+    color: '#f472b6',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
-  heroBadge: {
+  practiceBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(245, 158, 11, 0.15)',
@@ -830,36 +1221,40 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 8,
     alignSelf: 'flex-start',
-    marginBottom: 8,
+    marginBottom: 6,
     borderWidth: 1,
     borderColor: 'rgba(245, 158, 11, 0.3)',
   },
-  heroBadgeText: {
+  practiceBadgeText: {
     color: '#fbbf24',
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
-  heroTitle: {
+  featureTitle: {
     color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 22,
+    fontWeight: '900',
     marginBottom: 6,
   },
-  heroDesc: {
+  featureDesc: {
     color: '#cbd5e1',
     fontSize: 12,
     lineHeight: 18,
     fontWeight: '500',
   },
+
+  // ===================================================
+  // TRACK SELECTOR & TOPICS
+  // ===================================================
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   sectionHeading: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
     color: '#94a3b8',
     letterSpacing: 1.2,
@@ -908,8 +1303,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(30, 41, 59, 0.5)',
     borderRadius: 16,
     padding: 14,
-    marginTop: 14,
-    marginBottom: 24,
+    marginTop: 12,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
@@ -927,7 +1322,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    marginBottom: 12,
   },
   topicChip: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -940,43 +1334,29 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  quickPracticeBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 8,
-  },
-  quickPracticeText: {
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  modesSection: {
-    gap: 16,
-    marginBottom: 28,
-  },
-  // ONLINE FEATURED CARD (DEFAULT)
+
+  // ===================================================
+  // COMPETE MODE CARDS
+  // ===================================================
   onlineFeaturedCard: {
-    borderRadius: 22,
+    borderRadius: 20,
     overflow: 'hidden',
     elevation: 8,
     shadowColor: '#6366f1',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.45,
+    shadowOpacity: 0.4,
     shadowRadius: 10,
     borderWidth: 1.5,
     borderColor: '#818cf8',
+    marginBottom: 16,
   },
   onlineGradient: {
-    padding: 20,
+    padding: 18,
   },
   onlineBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   onlineLiveDot: {
     width: 8,
@@ -994,13 +1374,13 @@ const styles = StyleSheet.create({
   onlineMainRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    marginBottom: 16,
+    gap: 14,
+    marginBottom: 14,
   },
   onlineIconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1010,16 +1390,16 @@ const styles = StyleSheet.create({
   },
   onlineTitle: {
     color: '#ffffff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '900',
     letterSpacing: 0.5,
-    marginBottom: 4,
+    marginBottom: 3,
   },
   onlineDesc: {
     color: 'rgba(255, 255, 255, 0.85)',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
-    lineHeight: 17,
+    lineHeight: 16,
   },
   onlineActionPillsRow: {
     flexDirection: 'row',
@@ -1029,13 +1409,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 10,
   },
   actionPillText: {
     color: '#e0e7ff',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
   },
   actionPillActive: {
@@ -1044,38 +1424,26 @@ const styles = StyleSheet.create({
   },
   actionPillActiveText: {
     color: '#4338ca',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '900',
   },
-  // OFFLINE CARD
   offlineCard: {
     borderRadius: 18,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(244, 114, 182, 0.3)',
-  },
-  practiceCard: {
-    borderRadius: 18,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.3)',
-  },
-  blitzCard: {
-    borderRadius: 18,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(236, 72, 153, 0.3)',
+    marginBottom: 16,
   },
   modeCardGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 18,
+    padding: 16,
     gap: 14,
   },
   modeIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1086,10 +1454,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 4,
+    marginBottom: 3,
   },
   modeTitle: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '900',
     color: '#ffffff',
     letterSpacing: 0.5,
@@ -1106,149 +1474,171 @@ const styles = StyleSheet.create({
   },
   modeDesc: {
     color: '#cbd5e1',
-    fontSize: 12,
-    fontWeight: '500',
-    lineHeight: 16,
-  },
-  footer: {
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  footerBrand: {
-    color: '#475569',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-    marginBottom: 4,
-  },
-  footerText: {
-    color: '#64748b',
     fontSize: 11,
     fontWeight: '500',
-    textAlign: 'center',
+    lineHeight: 15,
   },
-  // DIFFICULTY VIEW STYLES
-  difficultyScroll: {
-    paddingTop: 56,
-    paddingBottom: 40,
-    paddingHorizontal: 20,
-  },
-  diffHeaderSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+
+  // ===================================================
+  // INVITE FRIENDS CARD
+  // ===================================================
+  inviteFriendsCard: {
+    borderRadius: 18,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: 'rgba(245, 158, 11, 0.35)',
     marginBottom: 20,
   },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  inviteGradient: {
+    padding: 16,
   },
-  backLabel: {
-    color: '#94a3b8',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  selectedTrackPill: {
+  inviteHeaderRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    gap: 12,
+    marginBottom: 12,
+  },
+  inviteIconBox: {
+    width: 42,
+    height: 42,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  selectedTrackPillText: {
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  diffTitleBlock: {
-    marginBottom: 24,
-  },
-  modeIndicatorRow: {
-    flexDirection: 'row',
+    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 6,
   },
-  modeSubtitle: {
-    color: '#818cf8',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  sectionTitle: {
-    fontSize: 28,
+  inviteTitle: {
+    fontSize: 15,
     fontWeight: '900',
     color: '#ffffff',
-    marginBottom: 6,
+    marginBottom: 2,
   },
-  sectionDesc: {
-    color: '#94a3b8',
-    fontSize: 13,
-    lineHeight: 19,
-    fontWeight: '500',
+  inviteDesc: {
+    fontSize: 11,
+    color: '#cbd5e1',
+    lineHeight: 16,
   },
-  difficultyList: {
-    gap: 16,
-  },
-  difficultyCard: {
-    borderRadius: 18,
-    borderWidth: 1.5,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
-  },
-  difficultyGradient: {
-    padding: 20,
-  },
-  diffHeaderRow: {
+  referralCodeBox: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
-  diffNameGroup: {
+  referralCodeLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#94a3b8',
+    letterSpacing: 0.5,
+  },
+  referralCodeVal: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#fbbf24',
+    letterSpacing: 1,
+  },
+  copyCodeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.3)',
   },
-  difficultyLabel: {
-    fontSize: 18,
+  copyCodeBtnText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#fbbf24',
+  },
+  shareInviteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fbbf24',
+    borderRadius: 12,
+    paddingVertical: 11,
+  },
+  shareInviteBtnText: {
+    fontSize: 13,
     fontWeight: '900',
-    letterSpacing: 0.8,
+    color: '#0f172a',
+    letterSpacing: 0.3,
   },
-  diffTagBadge: {
+
+  // ===================================================
+  // PRACTICE TIMED SPRINT STYLES
+  // ===================================================
+  diffCardsCol: {
+    gap: 10,
+    marginBottom: 20,
+  },
+  practiceDiffCard: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  diffCardGradient: {
+    padding: 14,
+  },
+  diffCardTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  diffCardLabel: {
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  diffCardBadge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
   },
-  diffTagText: {
+  diffCardBadgeText: {
     fontSize: 10,
     fontWeight: '800',
   },
-  meterContainer: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  meterBar: {
-    width: 14,
-    height: 14,
-    borderRadius: 3,
-  },
-  difficultyDesc: {
+  diffCardPacing: {
+    fontSize: 11,
     color: '#cbd5e1',
-    fontSize: 13,
-    lineHeight: 19,
+    lineHeight: 16,
     fontWeight: '500',
-    marginBottom: 14,
   },
-  startRow: {
+  startSprintBtn: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 8,
+    shadowColor: '#be185d',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#ec4899',
+  },
+  startSprintGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    padding: 18,
+    gap: 14,
   },
-  startText: {
-    fontSize: 13,
-    fontWeight: '800',
+  startSprintTitle: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  startSprintSub: {
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 2,
   },
 });

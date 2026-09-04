@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { Timer, Trophy, Swords, Zap, RotateCcw, ArrowLeft, Sparkles } from 'lucide-react-native';
 import { useGameStore } from '../store/useGameStore';
+import { useRewardsStore } from '../store/useRewardsStore';
 import PlayerZone from '../components/duel/PlayerZone';
 import { KojiTutorModal } from '../components/koji/KojiTutorModal';
 import { KojiAvatar } from '../components/koji/KojiAvatar';
@@ -43,8 +44,28 @@ export default function DuelScreen() {
 
   const [countdown, setCountdown] = useState(3);
   const [showKojiModal, setShowKojiModal] = useState(false);
+  const [pointsAwarded, setPointsAwarded] = useState<number | null>(null);
+  const hasRecordedPointsRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerPulse = useRef(new Animated.Value(1)).current;
+
+  const { recordMatchOutcome } = useRewardsStore();
+
+  // Record points when game over
+  useEffect(() => {
+    if (phase === 'playing') {
+      hasRecordedPointsRef.current = false;
+      setPointsAwarded(null);
+    } else if (phase === 'game_over' && !hasRecordedPointsRef.current) {
+      hasRecordedPointsRef.current = true;
+      const isP1Win = mode === 'solo_blitz' ? player2.score > player1.score : player1.score > player2.score;
+      const isDraw = player1.score === player2.score;
+      const outcome = isP1Win ? 'win' : isDraw ? 'draw' : 'loss';
+      const correctCount = mode === 'solo_blitz' ? player2.combo : player1.combo;
+      const res = recordMatchOutcome('duel', outcome, { correctCount });
+      setPointsAwarded(res.delta);
+    }
+  }, [phase, player1.score, player2.score, mode]);
 
   // Countdown timer sequence: 3 -> 2 -> 1 -> GO!
   useEffect(() => {
@@ -164,6 +185,26 @@ export default function DuelScreen() {
             <Text style={styles.gameOverSub}>
               {timer <= 0 ? 'Time Expired' : 'Round Complete'} • {trackName}
             </Text>
+
+            {/* Matiks Points Reward Badge */}
+            {pointsAwarded !== null && (
+              <View
+                style={[
+                  styles.pointsRewardBadge,
+                  pointsAwarded >= 0 ? styles.pointsRewardPositive : styles.pointsRewardNegative,
+                ]}
+              >
+                <Trophy size={14} color={pointsAwarded >= 0 ? '#10B981' : '#EF4444'} />
+                <Text
+                  style={[
+                    styles.pointsRewardText,
+                    { color: pointsAwarded >= 0 ? '#10B981' : '#EF4444' },
+                  ]}
+                >
+                  {pointsAwarded > 0 ? `+${pointsAwarded}` : pointsAwarded} Matiks Points
+                </Text>
+              </View>
+            )}
 
             {/* Duel Score Comparison */}
             <View style={styles.scoreRowContainer}>
@@ -601,6 +642,29 @@ const styles = StyleSheet.create({
   },
   kojiDuelReviewText: {
     color: '#06B6D4',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  pointsRewardBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  pointsRewardPositive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderColor: 'rgba(16, 185, 129, 0.35)',
+  },
+  pointsRewardNegative: {
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderColor: 'rgba(239, 68, 68, 0.35)',
+  },
+  pointsRewardText: {
     fontSize: 13,
     fontWeight: '800',
   },

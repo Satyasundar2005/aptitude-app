@@ -11,16 +11,18 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Flame, Zap, Map, Layers, Sparkles, Play, RotateCcw } from 'lucide-react-native';
+import { ArrowLeft, Flame, Zap, Map, Layers, Sparkles, Play, RotateCcw, Trophy, Gift } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { useSoloStudyStore } from '../store/useSoloStudyStore';
 import { useUserStore } from '../store/useUserStore';
+import { useRewardsStore } from '../store/useRewardsStore';
 import { SOLO_CURRICULUM, STUDY_STAGES } from '../data/soloCurriculum';
 import { StudyLevel, StageId } from '../types/soloStudy';
 import { MatiksJourneyPath } from '../components/solo/MatiksJourneyPath';
 import { BrilliantCourseList } from '../components/solo/BrilliantCourseList';
 import { LessonInteractiveModal } from '../components/solo/LessonInteractiveModal';
+import { DailyRewardsModal } from '../components/rewards/DailyRewardsModal';
 
 const CATEGORY_TABS: { id: string; label: string; stageId?: StageId }[] = [
   { id: 'all', label: 'All Levels (1–30)' },
@@ -46,8 +48,11 @@ export default function PracticeScreen() {
     setViewMode,
     setActiveCategory,
   } = useSoloStudyStore();
+  const { getClaimableCount } = useRewardsStore();
 
   const [activeModalLevel, setActiveModalLevel] = useState<StudyLevel | null>(null);
+  const [showDailyRewards, setShowDailyRewards] = useState(false);
+  const claimableCount = getClaimableCount();
 
   // Filter levels based on selected category tab
   const filteredLevels = useMemo(() => {
@@ -99,15 +104,36 @@ export default function PracticeScreen() {
           </View>
         </View>
 
-        {/* Stats & Streak Chips */}
+        {/* Stats, Tasks & Points Chips */}
         <View style={styles.topBarRight}>
+          <TouchableOpacity
+            style={[styles.statChip, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}
+            onPress={() => setShowDailyRewards(true)}
+            activeOpacity={0.8}
+          >
+            <Gift size={14} color="#10B981" />
+            <Text style={[styles.statChipText, { color: '#10B981' }]}>Tasks</Text>
+            {claimableCount > 0 && (
+              <View style={styles.claimableBadge}>
+                <Text style={styles.claimableBadgeText}>{claimableCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.statChip, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}
+            onPress={() => setShowDailyRewards(true)}
+            activeOpacity={0.8}
+          >
+            <Trophy size={14} color="#F59E0B" />
+            <Text style={[styles.statChipText, { color: '#F59E0B' }]}>
+              {profile.rating || 1200}
+            </Text>
+          </TouchableOpacity>
+
           <View style={styles.statChip}>
             <Flame size={14} color="#F97316" />
             <Text style={styles.statChipText}>{streak}d</Text>
-          </View>
-          <View style={[styles.statChip, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
-            <Zap size={14} color="#F59E0B" />
-            <Text style={[styles.statChipText, { color: '#F59E0B' }]}>{totalXp}</Text>
           </View>
         </View>
       </View>
@@ -226,6 +252,12 @@ export default function PracticeScreen() {
         visible={!!activeModalLevel}
         onClose={() => setActiveModalLevel(null)}
       />
+
+      {/* Matiks Daily Rewards & Points Modal */}
+      <DailyRewardsModal
+        visible={showDailyRewards}
+        onClose={() => setShowDailyRewards(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -289,6 +321,20 @@ const styles = StyleSheet.create({
     color: '#F97316',
     fontSize: 12,
     fontWeight: '800',
+  },
+  claimableBadge: {
+    backgroundColor: '#10B981',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 2,
+  },
+  claimableBadgeText: {
+    color: '#0F172A',
+    fontSize: 10,
+    fontWeight: '900',
   },
   modeSwitcherRow: {
     paddingHorizontal: 16,

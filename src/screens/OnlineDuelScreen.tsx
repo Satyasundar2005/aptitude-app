@@ -29,6 +29,7 @@ import {
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useGameStore } from '../store/useGameStore';
+import { useRewardsStore } from '../store/useRewardsStore';
 import { KojiTutorModal } from '../components/koji/KojiTutorModal';
 import { KojiAvatar } from '../components/koji/KojiAvatar';
 
@@ -58,9 +59,28 @@ export default function OnlineDuelScreen() {
   const [countdown, setCountdown] = useState(3);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [showKojiModal, setShowKojiModal] = useState(false);
+  const [pointsAwarded, setPointsAwarded] = useState<number | null>(null);
+  const hasRecordedPointsRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerPulse = useRef(new Animated.Value(1)).current;
   const scorePop = useRef(new Animated.Value(1)).current;
+
+  const { recordMatchOutcome } = useRewardsStore();
+
+  // Record points when game over
+  useEffect(() => {
+    if (phase === 'playing') {
+      hasRecordedPointsRef.current = false;
+      setPointsAwarded(null);
+    } else if (phase === 'game_over' && !hasRecordedPointsRef.current) {
+      hasRecordedPointsRef.current = true;
+      const isWin = player1.score > player2.score;
+      const isDraw = player1.score === player2.score;
+      const outcome = isWin ? 'win' : isDraw ? 'draw' : 'loss';
+      const res = recordMatchOutcome('online', outcome, { correctCount: player1.combo });
+      setPointsAwarded(res.delta);
+    }
+  }, [phase, player1.score, player2.score]);
 
   // Reset selected answer on question change
   useEffect(() => {
@@ -187,6 +207,26 @@ export default function OnlineDuelScreen() {
             <Text style={styles.gameOverSub}>
               Online Duel Completed • {examTrack.toUpperCase()}
             </Text>
+
+            {/* Matiks Points Reward Badge */}
+            {pointsAwarded !== null && (
+              <View
+                style={[
+                  styles.pointsRewardBadge,
+                  pointsAwarded >= 0 ? styles.pointsRewardPositive : styles.pointsRewardNegative,
+                ]}
+              >
+                <Trophy size={14} color={pointsAwarded >= 0 ? '#10B981' : '#EF4444'} />
+                <Text
+                  style={[
+                    styles.pointsRewardText,
+                    { color: pointsAwarded >= 0 ? '#10B981' : '#EF4444' },
+                  ]}
+                >
+                  {pointsAwarded > 0 ? `+${pointsAwarded}` : pointsAwarded} Matiks Points
+                </Text>
+              </View>
+            )}
 
             {/* Final Scores Comparison */}
             <View style={styles.scoreRowContainer}>
@@ -923,5 +963,28 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 15,
     marginTop: 2,
+  },
+  pointsRewardBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  pointsRewardPositive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderColor: 'rgba(16, 185, 129, 0.35)',
+  },
+  pointsRewardNegative: {
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderColor: 'rgba(239, 68, 68, 0.35)',
+  },
+  pointsRewardText: {
+    fontSize: 13,
+    fontWeight: '800',
   },
 });

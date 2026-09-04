@@ -22,10 +22,12 @@ import {
   Zap,
   Star,
   Compass,
+  Trophy,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { StudyLevel } from '../../types/soloStudy';
 import { useSoloStudyStore } from '../../store/useSoloStudyStore';
+import { useRewardsStore } from '../../store/useRewardsStore';
 import { KojiTutorCard } from '../koji/KojiTutorCard';
 import { generateKojiCorrection } from '../../services/kojiTutorService';
 import { Question, QuestionCategory } from '../../types/game';
@@ -84,12 +86,14 @@ export const LessonInteractiveModal: React.FC<Props> = ({
   onLevelCompleted,
 }) => {
   const { completeLevel } = useSoloStudyStore();
+  const { recordMatchOutcome } = useRewardsStore();
 
   const [phase, setPhase] = useState<LessonPhase>('hook');
   const [currentQIndex, setCurrentQIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
+  const [pointsAwarded, setPointsAwarded] = useState<number | null>(null);
 
   useEffect(() => {
     if (visible) {
@@ -98,6 +102,7 @@ export const LessonInteractiveModal: React.FC<Props> = ({
       setSelectedAnswer(null);
       setIsAnswerSubmitted(false);
       setCorrectCount(0);
+      setPointsAwarded(null);
     }
   }, [visible, level?.id]);
 
@@ -136,6 +141,12 @@ export const LessonInteractiveModal: React.FC<Props> = ({
       const finalCorrect = selectedAnswer === currentQ.correctIndex ? correctCount : correctCount;
       const stars = finalCorrect === totalQ ? 3 : finalCorrect >= 2 ? 2 : 1;
       completeLevel(level.id, stars, level.xpReward);
+
+      // Record Matiks Points for Solo Study (>= 2 stars is a Win, < 2 stars is a Loss)
+      const outcome = stars >= 2 ? 'win' : 'loss';
+      const res = recordMatchOutcome('study', outcome, { correctCount: finalCorrect });
+      setPointsAwarded(res.delta);
+
       setPhase('completed');
       if (onLevelCompleted) {
         onLevelCompleted(level.id);
@@ -400,8 +411,26 @@ export const LessonInteractiveModal: React.FC<Props> = ({
               <View style={styles.rewardBadges}>
                 <View style={styles.rewardPill}>
                   <Zap size={18} color="#F59E0B" />
-                  <Text style={styles.rewardPillText}>+{level.xpReward} Mastery XP</Text>
+                  <Text style={styles.rewardPillText}>+{level.xpReward} XP</Text>
                 </View>
+                {pointsAwarded !== null && (
+                  <View
+                    style={[
+                      styles.rewardPill,
+                      pointsAwarded >= 0 ? styles.pointsPillPositive : styles.pointsPillNegative,
+                    ]}
+                  >
+                    <Trophy size={16} color={pointsAwarded >= 0 ? '#10B981' : '#EF4444'} />
+                    <Text
+                      style={[
+                        styles.rewardPillText,
+                        { color: pointsAwarded >= 0 ? '#10B981' : '#EF4444' },
+                      ]}
+                    >
+                      {pointsAwarded > 0 ? `+${pointsAwarded}` : pointsAwarded} Pts
+                    </Text>
+                  </View>
+                )}
                 <View style={styles.rewardPill}>
                   <Sparkles size={18} color="#06B6D4" />
                   <Text style={styles.rewardPillText}>
@@ -804,6 +833,16 @@ const styles = StyleSheet.create({
     color: '#F8FAFC',
     fontSize: 13,
     fontWeight: '700',
+  },
+  pointsPillPositive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.4)',
+  },
+  pointsPillNegative: {
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.4)',
   },
   congratsQuote: {
     fontSize: 13,

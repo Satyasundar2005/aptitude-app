@@ -358,7 +358,7 @@ export default function ProfileMenuModal({ visible, onClose, onNavigate }: Profi
                       <View style={styles.ratingBadgeRow}>
                         <View style={styles.ratingTag}>
                           <Trophy size={12} color="#fbbf24" style={{ marginRight: 4 }} />
-                          <Text style={styles.ratingValue}>{profile.rating} ELO</Text>
+                          <Text style={styles.ratingValue}>{profile.rating} PTS</Text>
                           <Text style={styles.ratingTier}>• {profile.rankTitle}</Text>
                         </View>
                         {profile.isLoggedIn ? (
@@ -390,39 +390,37 @@ export default function ProfileMenuModal({ visible, onClose, onNavigate }: Profi
                         )}
                       </View>
 
-                      {/* Online Duel Record (If Logged In) */}
-                      {profile.isLoggedIn && (
-                        <View style={styles.duelRecordRow}>
-                          <View style={styles.duelRecordItem}>
-                            <Text style={styles.duelRecordVal}>{profile.totalMatches || 0}</Text>
-                            <Text style={styles.duelRecordLbl}>Matches</Text>
-                          </View>
-                          <View style={styles.duelRecordDivider} />
-                          <View style={styles.duelRecordItem}>
-                            <Text style={[styles.duelRecordVal, { color: '#10b981' }]}>
-                              {profile.wins || 0}
-                            </Text>
-                            <Text style={styles.duelRecordLbl}>Wins</Text>
-                          </View>
-                          <View style={styles.duelRecordDivider} />
-                          <View style={styles.duelRecordItem}>
-                            <Text style={[styles.duelRecordVal, { color: '#f43f5e' }]}>
-                              {profile.losses || 0}
-                            </Text>
-                            <Text style={styles.duelRecordLbl}>Losses</Text>
-                          </View>
-                          <View style={styles.duelRecordDivider} />
-                          <View style={styles.duelRecordItem}>
-                            <Text style={[styles.duelRecordVal, { color: '#38bdf8' }]}>
-                              {profile.totalMatches && profile.totalMatches > 0
-                                ? Math.round(((profile.wins || 0) / profile.totalMatches) * 100)
-                                : 0}
-                              %
-                            </Text>
-                            <Text style={styles.duelRecordLbl}>Win %</Text>
-                          </View>
+                      {/* Battle Match Record */}
+                      <View style={styles.duelRecordRow}>
+                        <View style={styles.duelRecordItem}>
+                          <Text style={styles.duelRecordVal}>{profile.totalMatches || 0}</Text>
+                          <Text style={styles.duelRecordLbl}>Matches</Text>
                         </View>
-                      )}
+                        <View style={styles.duelRecordDivider} />
+                        <View style={styles.duelRecordItem}>
+                          <Text style={[styles.duelRecordVal, { color: '#10b981' }]}>
+                            {profile.wins || 0}
+                          </Text>
+                          <Text style={styles.duelRecordLbl}>Wins</Text>
+                        </View>
+                        <View style={styles.duelRecordDivider} />
+                        <View style={styles.duelRecordItem}>
+                          <Text style={[styles.duelRecordVal, { color: '#f43f5e' }]}>
+                            {profile.losses || 0}
+                          </Text>
+                          <Text style={styles.duelRecordLbl}>Losses</Text>
+                        </View>
+                        <View style={styles.duelRecordDivider} />
+                        <View style={styles.duelRecordItem}>
+                          <Text style={[styles.duelRecordVal, { color: '#38bdf8' }]}>
+                            {profile.totalMatches && profile.totalMatches > 0
+                              ? Math.round(((profile.wins || 0) / profile.totalMatches) * 100)
+                              : 0}
+                            %
+                          </Text>
+                          <Text style={styles.duelRecordLbl}>Win %</Text>
+                        </View>
+                      </View>
                     </LinearGradient>
                   </View>
 

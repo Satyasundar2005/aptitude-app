@@ -26,6 +26,8 @@ export interface UserProfile {
   wins?: number;
   losses?: number;
   draws?: number;
+  hasCompletedOnboarding?: boolean;
+  referralCode?: string;
 }
 
 export interface UserSettings {
@@ -62,6 +64,7 @@ interface UserStore {
   }>;
   logout: () => Promise<void>;
   initAuth: () => Promise<void>;
+  completeOnboarding: (name?: string, avatar?: string, targetExam?: ExamTrack) => void;
 }
 
 function getRankTitle(rating: number): string {
@@ -87,6 +90,8 @@ const DEFAULT_PROFILE: UserProfile = {
   wins: 0,
   losses: 0,
   draws: 0,
+  hasCompletedOnboarding: false,
+  referralCode: 'CLASH-2026',
 };
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -145,6 +150,18 @@ export const useUserStore = create<UserStore>()(
             institution: institution.trim() || 'Aspirant',
             targetExam,
             isLoggedIn: true,
+            hasCompletedOnboarding: true,
+          },
+        })),
+
+      completeOnboarding: (name, avatar, targetExam) =>
+        set((state) => ({
+          profile: {
+            ...state.profile,
+            name: name?.trim() || state.profile.name,
+            avatar: avatar || state.profile.avatar,
+            targetExam: targetExam || state.profile.targetExam,
+            hasCompletedOnboarding: true,
           },
         })),
 
