@@ -1,0 +1,474 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AptiClash — Competitive Aptitude & 1v1 Battles</title>
+  <meta name="description" content="Master aptitude with self-study pathways, 1v1 split-screen battles, and real-time online duels. Download the Android APK.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%22><text y=%2222%22 font-size=%2222%22>⚔️</text></svg>">
+  <style>
+    :root {
+      --bg-dark: #0B0F19;
+      --card-bg: #131A2B;
+      --card-border: #1E293B;
+      --cyan: #06B6D4;
+      --cyan-glow: rgba(6, 182, 212, 0.4);
+      --violet: #8B5CF6;
+      --emerald: #10B981;
+      --emerald-glow: rgba(16, 185, 129, 0.4);
+      --amber: #F59E0B;
+      --coral: #F43F5E;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* Ambient background gradient glow */
+    .glow-top {
+      position: absolute;
+      top: -150px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.25) 0%, rgba(6, 182, 212, 0.15) 50%, transparent 70%);
+      filter: blur(80px);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 30px 20px 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header Nav */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 30px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .brand-icon {
+      font-size: 28px;
+      background: rgba(139, 92, 246, 0.2);
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(139, 92, 246, 0.4);
+    }
+
+    .brand-name {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      background: linear-gradient(90deg, #38BDF8, #818CF8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .github-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--card-border);
+      transition: all 0.2s ease;
+    }
+
+    .github-link:hover {
+      color: var(--text-main);
+      border-color: var(--cyan);
+      background: rgba(6, 182, 212, 0.08);
+    }
+
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      padding: 60px 0 40px;
+    }
+
+    .badge-bar {
+      display: inline-flex;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 6px 14px;
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      margin-bottom: 24px;
+      font-size: 13px;
+      color: var(--cyan);
+      font-weight: 600;
+    }
+
+    .hero-title {
+      font-size: 44px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+
+    .hero-title span {
+      background: linear-gradient(135deg, #06B6D4 0%, #8B5CF6 50%, #EC4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 17px;
+      color: var(--text-muted);
+      max-width: 620px;
+      margin: 0 auto 36px;
+    }
+
+    /* Download Action Card */
+    .download-card {
+      background: linear-gradient(180deg, #162036 0%, #111827 100%);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      box-shadow: 0 10px 40px -10px rgba(16, 185, 129, 0.15);
+      border-radius: 24px;
+      padding: 36px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 60px;
+    }
+
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: linear-gradient(135deg, #10B981, #059669);
+      color: #FFFFFF;
+      text-decoration: none;
+      font-size: 18px;
+      font-weight: 700;
+      padding: 18px 36px;
+      border-radius: 16px;
+      box-shadow: 0 8px 25px var(--emerald-glow);
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .btn-download:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(16, 185, 129, 0.5);
+    }
+
+    .btn-download svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .download-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .download-meta span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .qr-container {
+      margin-top: 15px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 12px;
+      border-radius: 16px;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .qr-container img {
+      width: 140px;
+      height: 140px;
+      border-radius: 8px;
+      background: white;
+      padding: 4px;
+    }
+
+    .qr-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Feature Grid */
+    .section-title {
+      font-size: 24px;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      margin-bottom: 60px;
+    }
+
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 24px;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(6, 182, 212, 0.4);
+    }
+
+    .card-icon {
+      font-size: 28px;
+      margin-bottom: 14px;
+      display: inline-block;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-main);
+    }
+
+    .card-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Installation Steps */
+    .steps-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 50px;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      align-items: flex-start;
+    }
+
+    .step-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .step-number {
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--cyan);
+      font-weight: 800;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 1px solid rgba(6, 182, 212, 0.3);
+    }
+
+    .step-text h4 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .step-text p {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding-top: 30px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    footer a {
+      color: var(--cyan);
+      text-decoration: none;
+    }
+
+    @media (max-width: 600px) {
+      .hero-title {
+        font-size: 32px;
+      }
+      .btn-download {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow-top"></div>
+
+  <div class="container">
+    <header>
+      <a href="#" class="brand">
+        <div class="brand-icon">⚔️</div>
+        <div class="brand-name">APTICLASH</div>
+      </a>
+      <a href="https://github.com/Satyasundar2005/aptitude-app" target="_blank" class="github-link">
+        GitHub Repo ↗
+      </a>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="badge-bar">
+          ⚡ ANDROID APP • VERSION 1.0.0 • ZERO ADS
+        </div>
+        <h1 class="hero-title">
+          Master Aptitude.<br>
+          <span>Duel Live With Friends.</span>
+        </h1>
+        <p class="hero-desc">
+          Gamified solo stepping stone pathways, 1v1 tabletop split-screen duels, real-time multiplayer, and previous years' question sprint challenges.
+        </p>
+
+        <div class="download-card">
+          <a id="apkDownloadBtn" href="https://github.com/Satyasundar2005/aptitude-app/releases/download/latest-apk/AptiClash.apk" class="btn-download">
+            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-5H8l4-4 4 4h-3v5h-2z"/></svg>
+            Download Android APK (Direct)
+          </a>
+
+          <div class="download-meta">
+            <span>📦 Package: <b>com.appticlash.app</b></span>
+            <span>📱 OS: <b>Android 8.0+</b></span>
+            <span>✨ Architecture: <b>Universal APK</b></span>
+          </div>
+
+          <div class="qr-container">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://github.com/Satyasundar2005/aptitude-app/releases/download/latest-apk/AptiClash.apk" alt="Scan QR to download APK on Phone">
+            <div class="qr-label">📲 Scan with your phone camera to download</div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="section-title">Everything Built Into The Mobile App</h2>
+        <div class="grid">
+          <div class="feature-card">
+            <div class="card-icon">🗺️</div>
+            <h3 class="card-title">Self-Study Pathway</h3>
+            <p class="card-desc">Gamified stepping stone pathway curriculum with Koji AI interactive tutor for step-by-step concept learning.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="card-icon">⚔️</div>
+            <h3 class="card-title">1v1 Tabletop Split-Screen</h3>
+            <p class="card-desc">Put your phone on a table and duel with a friend locally on the same device with upside-down split controls.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="card-icon">🌐</div>
+            <h3 class="card-title">Online Real-Time Duels</h3>
+            <p class="card-desc">Create room codes, invite friends who don't have the app, and battle in real-time with live Supabase WebSocket sync.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="card-icon">⏱️</div>
+            <h3 class="card-title">PYQ Exam Practice Sprint</h3>
+            <p class="card-desc">Previous 10-year question sprint modes targeting TCS, Infosys, CAT, GATE, and campus placement exams.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="card-icon">🤖</div>
+            <h3 class="card-title">Koji Interactive AI Tutor</h3>
+            <p class="card-desc">Instant mistake clinics, doubt clearing, formula breakdowns, and concept simplification for every question.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="card-icon">🏆</div>
+            <h3 class="card-title">Elo Ratings & Rewards</h3>
+            <p class="card-desc">Climb from Bronze Cadet to Grandmaster, earn daily reward coins, and unlock exclusive avatar crowns.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="steps-box">
+        <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 20px; text-align: center;">How to Install on Android</h3>
+        <div class="step-item">
+          <div class="step-number">1</div>
+          <div class="step-text">
+            <h4>Download the APK</h4>
+            <p>Tap the <b>Download Android APK</b> button above or scan the QR code using your phone camera.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-number">2</div>
+          <div class="step-text">
+            <h4>Allow Installation</h4>
+            <p>Tap the downloaded <code>AptiClash.apk</code>. If your phone asks, allow <i>"Install from Unknown Sources"</i> for your browser.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-number">3</div>
+          <div class="step-text">
+            <h4>Launch & Duel</h4>
+            <p>Open <b>AptiClash</b>, sign in or play as guest, and start learning or challenging your friends!</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        Built with ❤️ for aspirants and competitive learners &bull; 
+        <a href="https://github.com/Satyasundar2005/aptitude-app/releases/latest" target="_blank">Releases</a> &bull; 
+        <a href="https://github.com/Satyasundar2005/aptitude-app" target="_blank">Source Code</a>
+      </p>
+    </footer>
+  </div>
+</body>
+</html>

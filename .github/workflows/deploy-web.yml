@@ -1,4 +1,4 @@
-name: Deploy Web Frontend to GitHub Pages
+name: Deploy Download Website to GitHub Pages
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  deploy-website:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -24,33 +24,15 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: npm ci --legacy-peer-deps
-
-      - name: Export Web Bundle
-        run: npx expo export --platform web
-        env:
-          EXPO_PUBLIC_SUPABASE_URL: "https://gkurwysglbuofrvjhwlq.supabase.co"
-          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_7xR38UkPru464YPMvm5IMA_ZP6WDeR4"
-          EXPO_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_7xR38UkPru464YPMvm5IMA_ZP6WDeR4"
-
       - name: Setup Pages
         uses: actions/configure-pages@v5
-        continue-on-error: true
 
-      - name: Upload artifact
+      - name: Upload Landing Page Artifact
         uses: actions/upload-pages-artifact@v3
-        continue-on-error: true
         with:
-          path: './dist'
+          path: './web-landing'
 
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-        continue-on-error: true
+

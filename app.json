@@ -23,9 +23,6 @@
       "expo-router",
       "expo-sqlite"
     ],
-    "experiments": {
-      "baseUrl": "/aptitude-app"
-    },
     "extra": {
       "router": {},
       "eas": {
