@@ -164,6 +164,15 @@ export default function PlayerZone({
         </Text>
       </Animated.View>
 
+      {/* Koji Tutor Immediate Correction Pill */}
+      {player.answeredCorrect === false && question && (
+        <View style={styles.kojiTutorPill}>
+          <Text style={styles.kojiTutorPillText}>
+            🦉 Koji: Trick detected! Correct is Option {OPTION_LABELS[question.correctIndex]}
+          </Text>
+        </View>
+      )}
+
       {/* Options 2x2 Grid with A/B/C/D labels & accurate feedback */}
       <View style={styles.optionsGrid}>
         {(question?.options ?? ['', '', '', '']).map((option, index) => {
@@ -400,5 +409,20 @@ const styles = StyleSheet.create({
   },
   statusIconContainer: {
     marginLeft: 4,
+  },
+  kojiTutorPill: {
+    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#06B6D4',
+    marginBottom: 6,
+    alignSelf: 'center',
+  },
+  kojiTutorPillText: {
+    color: '#06B6D4',
+    fontSize: 11,
+    fontWeight: '800',
   },
 });

@@ -511,13 +511,13 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
             ]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              setSelectingFor('practice');
+              onNavigate('practice');
             }}
             activeOpacity={0.8}
           >
             <Target size={15} color={activeTrack.color} />
             <Text style={[styles.quickPracticeText, { color: activeTrack.color }]}>
-              Practice {activeTrack.title} Questions Solo
+              Solo Study Pathway: Age 13+ to CAT 99%ile
             </Text>
             <ArrowRight size={14} color={activeTrack.color} />
           </TouchableOpacity>
@@ -616,12 +616,12 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
             </LinearGradient>
           </TouchableOpacity>
 
-          {/* 🎯 3. EXAM PRACTICE & PYQ DRILL */}
+          {/* 🎯 3. SOLO STUDY PATHWAY (BRILLIANT / MATIKS STYLE) */}
           <TouchableOpacity
             style={styles.practiceCard}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              setSelectingFor('practice');
+              onNavigate('practice');
             }}
             activeOpacity={0.85}
           >
@@ -639,14 +639,16 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
 
               <View style={styles.modeTextGroup}>
                 <View style={styles.modeTitleRow}>
-                  <Text style={styles.modeTitle}>EXAM PRACTICE & PYQ DRILL</Text>
+                  <Text style={styles.modeTitle}>SOLO STUDY PATHWAY</Text>
                   <View style={[styles.modeTag, { backgroundColor: '#38bdf8' }]}>
-                    <Text style={[styles.modeTagText, { color: '#0f172a' }]}>SOLO STUDY</Text>
+                    <Text style={[styles.modeTagText, { color: '#0f172a' }]}>
+                      BRILLIANT & MATIKS
+                    </Text>
                   </View>
                 </View>
                 <Text style={styles.modeDesc}>
-                  Untimed study with step-by-step solutions for {activeTrack.title}. Learn formulas
-                  and review concepts.
+                  Learn Aptitude & Reasoning from age 13 basics to CAT 99%ile step-by-step. 30
+                  progressive levels with mental models, intuition & 10-Yr PYQs.
                 </Text>
               </View>
 

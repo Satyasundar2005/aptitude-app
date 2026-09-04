@@ -29,6 +29,8 @@ import {
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useGameStore } from '../store/useGameStore';
+import { KojiTutorModal } from '../components/koji/KojiTutorModal';
+import { KojiAvatar } from '../components/koji/KojiAvatar';
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 
@@ -55,6 +57,7 @@ export default function OnlineDuelScreen() {
 
   const [countdown, setCountdown] = useState(3);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [showKojiModal, setShowKojiModal] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerPulse = useRef(new Animated.Value(1)).current;
   const scorePop = useRef(new Animated.Value(1)).current;
@@ -203,6 +206,20 @@ export default function OnlineDuelScreen() {
                 <Text style={styles.playerBoxStreak}>Best Streak: {player2.combo}</Text>
               </View>
             </View>
+
+            {/* Ask Koji Tutor Match Breakdown */}
+            {currentQuestion && (
+              <TouchableOpacity
+                style={styles.kojiMatchReviewBtn}
+                onPress={() => setShowKojiModal(true)}
+                activeOpacity={0.85}
+              >
+                <KojiAvatar size={24} mood="thoughtful" showBadge={false} />
+                <Text style={styles.kojiMatchReviewText}>
+                  Ask Koji • Review Match Traps & Explanations
+                </Text>
+              </TouchableOpacity>
+            )}
 
             {/* Action Buttons */}
             <View style={styles.actionButtonsRow}>
@@ -353,6 +370,23 @@ export default function OnlineDuelScreen() {
             );
           })}
         </View>
+
+        {/* Koji Round Mistake Helper */}
+        {hasAnswered && !isCorrect && currentQuestion && (
+          <TouchableOpacity
+            style={styles.kojiRoundHelperCard}
+            onPress={() => setShowKojiModal(true)}
+            activeOpacity={0.85}
+          >
+            <KojiAvatar size={32} mood="thoughtful" showBadge={false} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.kojiRoundHelperTitle}>🦉 Koji: Slipped on this round?</Text>
+              <Text style={styles.kojiRoundHelperSub}>
+                Tap to see why Option {OPTION_LABELS[selectedOption ?? 0]} was a trap!
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
       {/* BOTTOM: YOUR PLAYER SCORE & STATUS BAR */}
@@ -377,6 +411,14 @@ export default function OnlineDuelScreen() {
           <Text style={styles.yourScoreLabel}>pts</Text>
         </Animated.View>
       </View>
+
+      {/* Koji Tutor Modal for Online Duel */}
+      <KojiTutorModal
+        visible={showKojiModal}
+        question={currentQuestion}
+        chosenIndex={selectedOption ?? 0}
+        onClose={() => setShowKojiModal(false)}
+      />
     </LinearGradient>
   );
 }
@@ -840,5 +882,46 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontSize: 15,
     fontWeight: '700',
+  },
+  kojiMatchReviewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.35)',
+    marginBottom: 14,
+    width: '100%',
+  },
+  kojiMatchReviewText: {
+    color: '#06B6D4',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  kojiRoundHelperCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: 'rgba(6, 182, 212, 0.12)',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.3)',
+    marginTop: 12,
+  },
+  kojiRoundHelperTitle: {
+    color: '#06B6D4',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  kojiRoundHelperSub: {
+    color: '#94A3B8',
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 2,
   },
 });

@@ -2,15 +2,23 @@ import { createClient } from '@supabase/supabase-js';
 import { Database } from '../types/supabase';
 import { safeStorage } from '../utils/safeStorage';
 
-// Supabase project credentials from Expo public environment variables
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+function cleanSupabaseUrl(url: string): string {
+  let cleaned = url.trim();
+  cleaned = cleaned.replace(/\/rest\/v1\/?$/, '');
+  cleaned = cleaned.replace(/\/+$/, '');
+  return cleaned;
+}
+
+const rawUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
+const supabaseUrl = cleanSupabaseUrl(rawUrl);
+const supabaseAnonKey = (process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '').trim();
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&
   supabaseAnonKey &&
   supabaseUrl !== 'https://your-project.supabase.co' &&
-  supabaseAnonKey !== 'your-anon-key'
+  supabaseAnonKey !== 'your-anon-key' &&
+  supabaseAnonKey !== 'PASTE_YOUR_SUPABASE_ANON_KEY_HERE'
 );
 
 if (!isSupabaseConfigured) {

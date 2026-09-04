@@ -6,6 +6,8 @@ import { useRouter } from 'expo-router';
 import { Timer, Trophy, Swords, Zap, RotateCcw, ArrowLeft, Sparkles } from 'lucide-react-native';
 import { useGameStore } from '../store/useGameStore';
 import PlayerZone from '../components/duel/PlayerZone';
+import { KojiTutorModal } from '../components/koji/KojiTutorModal';
+import { KojiAvatar } from '../components/koji/KojiAvatar';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -40,6 +42,7 @@ export default function DuelScreen() {
   } = useGameStore();
 
   const [countdown, setCountdown] = useState(3);
+  const [showKojiModal, setShowKojiModal] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerPulse = useRef(new Animated.Value(1)).current;
 
@@ -193,6 +196,18 @@ export default function DuelScreen() {
               </View>
             </View>
 
+            {/* Ask Koji Tutor Button */}
+            {currentQuestion && (
+              <TouchableOpacity
+                style={styles.kojiDuelReviewBtn}
+                onPress={() => setShowKojiModal(true)}
+                activeOpacity={0.8}
+              >
+                <KojiAvatar size={24} mood="thoughtful" showBadge={false} />
+                <Text style={styles.kojiDuelReviewText}>Ask Koji • Break Down Match Traps</Text>
+              </TouchableOpacity>
+            )}
+
             {/* Action Buttons */}
             <View style={styles.actionButtonsRow}>
               <TouchableOpacity
@@ -287,6 +302,14 @@ export default function DuelScreen() {
           />
         </View>
       </View>
+
+      {/* Koji Tutor Modal for Duel Review */}
+      <KojiTutorModal
+        visible={showKojiModal}
+        question={currentQuestion}
+        chosenIndex={player1.answeredCorrect === false ? 0 : 1}
+        onClose={() => setShowKojiModal(false)}
+      />
     </LinearGradient>
   );
 }
@@ -562,5 +585,23 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontSize: 15,
     fontWeight: '700',
+  },
+  kojiDuelReviewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.35)',
+    marginBottom: 14,
+    width: '100%',
+  },
+  kojiDuelReviewText: {
+    color: '#06B6D4',
+    fontSize: 13,
+    fontWeight: '800',
   },
 });

@@ -292,58 +292,71 @@ alter table public.room_answers enable row level security;
 alter table public.solo_blitz_runs enable row level security;
 
 -- Profiles: Anyone can view profiles, owners can update their own
+drop policy if exists "Public profiles are viewable by everyone" on public.profiles;
 create policy "Public profiles are viewable by everyone"
     on public.profiles for select
     using (true);
 
+drop policy if exists "Users can update their own profile" on public.profiles;
 create policy "Users can update their own profile"
     on public.profiles for update
     using (auth.uid() = id);
 
+drop policy if exists "Users can insert their own profile" on public.profiles;
 create policy "Users can insert their own profile"
     on public.profiles for insert
     with check (auth.uid() = id or auth.uid() is null);
 
 -- Questions: Viewable by everyone (both authenticated and anonymous players)
+drop policy if exists "Questions are readable by everyone" on public.questions;
 create policy "Questions are readable by everyone"
     on public.questions for select
     using (true);
 
+drop policy if exists "Admins/Service can insert questions" on public.questions;
 create policy "Admins/Service can insert questions"
     on public.questions for insert
     with check (true);
 
 -- Rooms: Realtime multiplayer room policies
+drop policy if exists "Anyone can view rooms by code or list" on public.rooms;
 create policy "Anyone can view rooms by code or list"
     on public.rooms for select
     using (true);
 
+drop policy if exists "Anyone can create a room" on public.rooms;
 create policy "Anyone can create a room"
     on public.rooms for insert
     with check (true);
 
+drop policy if exists "Participants can update their room" on public.rooms;
 create policy "Participants can update their room"
     on public.rooms for update
     using (true);
 
+drop policy if exists "Participants can delete their room" on public.rooms;
 create policy "Participants can delete their room"
     on public.rooms for delete
     using (true);
 
 -- Room Answers: Public read and insert for match evaluation
+drop policy if exists "Room answers are viewable by everyone" on public.room_answers;
 create policy "Room answers are viewable by everyone"
     on public.room_answers for select
     using (true);
 
+drop policy if exists "Room answers can be submitted by players" on public.room_answers;
 create policy "Room answers can be submitted by players"
     on public.room_answers for insert
     with check (true);
 
 -- Solo Blitz Runs: Viewable by everyone, insertable by players
+drop policy if exists "Solo Blitz leaderboard is viewable by everyone" on public.solo_blitz_runs;
 create policy "Solo Blitz leaderboard is viewable by everyone"
     on public.solo_blitz_runs for select
     using (true);
 
+drop policy if exists "Players can submit Solo Blitz scores" on public.solo_blitz_runs;
 create policy "Players can submit Solo Blitz scores"
     on public.solo_blitz_runs for insert
     with check (true);
@@ -352,12 +365,20 @@ create policy "Players can submit Solo Blitz scores"
 -- 9. REALTIME PUBLICATION SETUP
 -- ==============================================================================
 
--- Enable Realtime events for rooms and answers so 1v1 sync is instant
-begin;
-  -- remove if previously added to prevent errors
-  alter publication supabase_realtime drop table if exists public.rooms;
-  alter publication supabase_realtime drop table if exists public.room_answers;
-  
-  alter publication supabase_realtime add table public.rooms;
-  alter publication supabase_realtime add table public.room_answers;
-commit;
+-- Safely add tables to supabase_realtime publication if not already present
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables 
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'rooms'
+  ) then
+    alter publication supabase_realtime add table public.rooms;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables 
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'room_answers'
+  ) then
+    alter publication supabase_realtime add table public.room_answers;
+  end if;
+end $$;

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "gate_cs_2024_01",
+    "text": "In a town of 20,000 families, 40% families buy newspaper A, 20% buy newspaper B, and 10% buy newspaper C. 5% buy A and B, 3% buy B and C, and 4% buy A and C. If 2% families buy all three newspapers, find the number of families that buy newspaper A only.",
+    "options": ["6,600", "6,000", "7,200", "5,400"],
+    "correctIndex": 0,
+    "category": "percentages",
+    "difficulty": "medium",
+    "timeLimit": 45,
+    "examTrack": "gate",
+    "examTag": "GATE CS 2024",
+    "explanation": "Percentage buying only A = %A - %(A∩B) - %(A∩C) + %(A∩B∩C) = 40% - 5% - 4% + 2% = 33%. 33% of 20,000 = 6,600 families."
+  }
+]

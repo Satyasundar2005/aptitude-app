@@ -30,6 +30,9 @@ import {
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useGameStore } from '../store/useGameStore';
+import { KojiTutorModal } from '../components/koji/KojiTutorModal';
+import { KojiAvatar } from '../components/koji/KojiAvatar';
+import { Question } from '../types/game';
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 
@@ -71,6 +74,10 @@ export default function SoloBlitzScreen() {
 
   const [countdown, setCountdown] = useState(3);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [kojiModal, setKojiModal] = useState<{ question: Question; chosenIndex: number } | null>(
+    null
+  );
+  const [kojiLiveTip, setKojiLiveTip] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerPulse = useRef(new Animated.Value(1)).current;
   const scorePop = useRef(new Animated.Value(1)).current;
@@ -138,6 +145,8 @@ export default function SoloBlitzScreen() {
       ]).start();
     } else {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      setKojiLiveTip("🦉 Koji: Sneaky trap! We'll dissect this after your sprint.");
+      setTimeout(() => setKojiLiveTip(null), 2500);
     }
 
     submitAnswer(1, index);
@@ -224,6 +233,20 @@ export default function SoloBlitzScreen() {
               </View>
             </View>
 
+            {/* Koji Mistake Clinic Banner if errors occurred */}
+            {totalCorrect < blitzHistory.length && (
+              <View style={styles.kojiClinicBanner}>
+                <KojiAvatar size={36} mood="encouraging" showBadge={false} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.kojiClinicTitle}>Koji's Mistake Clinic</Text>
+                  <Text style={styles.kojiClinicSub}>
+                    {blitzHistory.length - totalCorrect} questions slipped through. Tap "Ask Koji"
+                    below to master the trick!
+                  </Text>
+                </View>
+              </View>
+            )}
+
             {/* Question Breakdown Review List */}
             <Text style={styles.reviewHeading}>Question Breakdown</Text>
             <ScrollView style={styles.reviewScroll} showsVerticalScrollIndicator={false}>
@@ -254,6 +277,23 @@ export default function SoloBlitzScreen() {
                       <Lightbulb size={12} color="#fbbf24" style={{ marginRight: 4 }} />
                       <Text style={styles.reviewExplanationText}>{item.question.explanation}</Text>
                     </View>
+                  )}
+
+                  {/* Koji Tutor Action on Missed Questions */}
+                  {!item.isCorrect && (
+                    <TouchableOpacity
+                      style={styles.askKojiButton}
+                      onPress={() =>
+                        setKojiModal({
+                          question: item.question,
+                          chosenIndex: item.selectedOptionIndex ?? 0,
+                        })
+                      }
+                      activeOpacity={0.8}
+                    >
+                      <KojiAvatar size={20} showBadge={false} />
+                      <Text style={styles.askKojiButtonText}>Ask Koji • Break Down This Trap</Text>
+                    </TouchableOpacity>
                   )}
                 </View>
               ))}
@@ -441,6 +481,21 @@ export default function SoloBlitzScreen() {
           <Text style={[styles.bottomPaceValue, { color: pace.color }]}>{pace.label}</Text>
         </View>
       </View>
+
+      {/* Koji Live Tip Toast during sprint */}
+      {kojiLiveTip && (
+        <View style={styles.kojiLiveToast}>
+          <Text style={styles.kojiLiveToastText}>{kojiLiveTip}</Text>
+        </View>
+      )}
+
+      {/* Koji Tutor Modal for inspecting mistakes */}
+      <KojiTutorModal
+        visible={!!kojiModal}
+        question={kojiModal?.question ?? null}
+        chosenIndex={kojiModal?.chosenIndex ?? null}
+        onClose={() => setKojiModal(null)}
+      />
     </LinearGradient>
   );
 }
@@ -914,5 +969,69 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontSize: 15,
     fontWeight: '700',
+  },
+  kojiClinicBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: 'rgba(6, 182, 212, 0.12)',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.3)',
+    marginBottom: 16,
+    width: '100%',
+  },
+  kojiClinicTitle: {
+    color: '#06B6D4',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  kojiClinicSub: {
+    color: '#94A3B8',
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 2,
+  },
+  askKojiButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+    alignSelf: 'flex-start',
+  },
+  askKojiButtonText: {
+    color: '#C084FC',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  kojiLiveToast: {
+    position: 'absolute',
+    bottom: 80,
+    left: 20,
+    right: 20,
+    backgroundColor: '#1E1B4B',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#818CF8',
+    alignItems: 'center',
+    shadowColor: '#818CF8',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  kojiLiveToastText: {
+    color: '#E0E7FF',
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });

@@ -1,515 +1,422 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  SafeAreaView,
+  StatusBar,
   Dimensions,
-  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import {
-  ArrowLeft,
-  ArrowRight,
-  BookOpen,
-  Check,
-  X,
-  Lightbulb,
-  Award,
-  Sparkles,
-  RotateCcw,
-  CheckCircle2,
-} from 'lucide-react-native';
+import { ArrowLeft, Flame, Zap, Map, Layers, Sparkles, Play, RotateCcw } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { useGameStore } from '../store/useGameStore';
 
-const OPTION_LABELS = ['A', 'B', 'C', 'D'];
+import { useSoloStudyStore } from '../store/useSoloStudyStore';
+import { useUserStore } from '../store/useUserStore';
+import { SOLO_CURRICULUM, STUDY_STAGES } from '../data/soloCurriculum';
+import { StudyLevel, StageId } from '../types/soloStudy';
+import { MatiksJourneyPath } from '../components/solo/MatiksJourneyPath';
+import { BrilliantCourseList } from '../components/solo/BrilliantCourseList';
+import { LessonInteractiveModal } from '../components/solo/LessonInteractiveModal';
 
-const TRACK_LABELS: Record<string, string> = {
-  gate: 'GATE (10-Yr PYQ)',
-  cat: 'CAT (IIMs QA & DILR)',
-  ese: 'ESE (Paper-1 GS & Aptitude)',
-  placement: 'Campus Placements',
-  banking: 'Banking & Speed Math',
-  all: 'All-Round Aptitude',
-};
+const CATEGORY_TABS: { id: string; label: string; stageId?: StageId }[] = [
+  { id: 'all', label: 'All Levels (1–30)' },
+  { id: 'foundation', label: '🌱 Age 13+ Foundations', stageId: 'foundation' },
+  { id: 'core_logic', label: '🔭 Gr 9-10 Core Logic', stageId: 'core_logic' },
+  { id: 'campus_placement', label: '💼 Campus Placements', stageId: 'campus_placement' },
+  { id: 'banking_govt', label: '🏛️ Banking & Govt', stageId: 'banking_govt' },
+  { id: 'gate_ese', label: '⚙️ GATE & ESE', stageId: 'gate_ese' },
+  { id: 'cat_elite', label: '👑 CAT 99%ile Pinnacle', stageId: 'cat_elite' },
+];
 
 export default function PracticeScreen() {
   const router = useRouter();
+  const { profile } = useUserStore();
   const {
-    currentQuestion,
-    examTrack,
-    difficulty,
-    roundNumber,
-    player1,
-    submitAnswer,
-    nextQuestion,
-    resetGame,
-  } = useGameStore();
+    currentLevel,
+    completedLevels,
+    levelStars,
+    totalXp,
+    streak,
+    viewMode,
+    activeCategory,
+    setViewMode,
+    setActiveCategory,
+  } = useSoloStudyStore();
 
-  const [selectedAnswerIndex, setSelectedAnswerIndex] = useState<number | null>(null);
-  const [stats, setStats] = useState({ totalAttempted: 0, totalCorrect: 0 });
+  const [activeModalLevel, setActiveModalLevel] = useState<StudyLevel | null>(null);
 
-  useEffect(() => {
-    setSelectedAnswerIndex(null);
-  }, [currentQuestion?.id]);
+  // Filter levels based on selected category tab
+  const filteredLevels = useMemo(() => {
+    if (activeCategory === 'all') return SOLO_CURRICULUM;
+    return SOLO_CURRICULUM.filter((lvl) => lvl.stageId === activeCategory);
+  }, [activeCategory]);
 
-  const handleSelectOption = (index: number) => {
-    if (selectedAnswerIndex !== null || !currentQuestion) return;
+  // Current level data object
+  const currentLevelData = useMemo(() => {
+    return SOLO_CURRICULUM.find((lvl) => lvl.id === currentLevel) || SOLO_CURRICULUM[0];
+  }, [currentLevel]);
 
-    setSelectedAnswerIndex(index);
-    const isCorrect = index === currentQuestion.correctIndex;
-
-    if (isCorrect) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setStats((prev) => ({
-        totalAttempted: prev.totalAttempted + 1,
-        totalCorrect: prev.totalCorrect + 1,
-      }));
-    } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      setStats((prev) => ({
-        ...prev,
-        totalAttempted: prev.totalAttempted + 1,
-      }));
-    }
-
-    submitAnswer(1, index);
+  const handleSelectLevel = (level: StudyLevel) => {
+    setActiveModalLevel(level);
   };
 
-  const handleNext = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    nextQuestion();
+  const handleContinueLearning = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+    setActiveModalLevel(currentLevelData);
   };
 
-  const handleExit = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    resetGame();
-    router.replace('/');
+  const handleTabPress = (categoryId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setActiveCategory(categoryId);
   };
 
-  const hasAnswered = selectedAnswerIndex !== null;
-  const isCorrect =
-    selectedAnswerIndex !== null &&
-    currentQuestion &&
-    selectedAnswerIndex === currentQuestion.correctIndex;
-  const accuracy =
-    stats.totalAttempted > 0 ? Math.round((stats.totalCorrect / stats.totalAttempted) * 100) : 100;
+  const toggleViewMode = (mode: 'journey' | 'courses') => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setViewMode(mode);
+  };
 
   return (
-    <LinearGradient colors={['#0f172a', '#1e1b4b', '#0f172a']} style={styles.container}>
-      <StatusBar style="light" />
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor="#0A0F1D" />
 
-      {/* Top Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleExit} activeOpacity={0.7}>
-          <ArrowLeft size={20} color="#94a3b8" />
-        </TouchableOpacity>
-
-        <View style={styles.trackPill}>
-          <Text style={styles.trackPillText}>{TRACK_LABELS[examTrack] || 'Aptitude Practice'}</Text>
-        </View>
-
-        <View style={styles.scoreBox}>
-          <Award size={14} color="#f59e0b" style={{ marginRight: 4 }} />
-          <Text style={styles.scoreText}>{player1.score}</Text>
-        </View>
-      </View>
-
-      {/* Sub-header with Round Progress & Accuracy */}
-      <View style={styles.metaRow}>
-        <Text style={styles.metaRound}>Question #{roundNumber}</Text>
-        <View style={styles.accuracyPill}>
-          <CheckCircle2 size={12} color="#10b981" style={{ marginRight: 4 }} />
-          <Text style={styles.accuracyText}>
-            Accuracy: {accuracy}% ({stats.totalCorrect}/{stats.totalAttempted})
-          </Text>
-        </View>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Question Card */}
-        <View style={styles.questionCard}>
-          <View style={styles.tagRow}>
-            {currentQuestion?.examTag && (
-              <View style={styles.examTagBadge}>
-                <BookOpen size={11} color="#60a5fa" style={{ marginRight: 4 }} />
-                <Text style={styles.examTagText}>{currentQuestion.examTag}</Text>
-              </View>
-            )}
-
-            <View style={styles.difficultyTag}>
-              <Text style={styles.difficultyTagText}>{difficulty.toUpperCase()}</Text>
-            </View>
+      {/* Top Header Bar */}
+      <View style={styles.topBar}>
+        <View style={styles.topBarLeft}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => router.back()}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <ArrowLeft size={20} color="#F8FAFC" />
+          </TouchableOpacity>
+          <View>
+            <Text style={styles.topBarTitle}>Solo Study</Text>
+            <Text style={styles.topBarSub}>Foundations to CAT 99%ile</Text>
           </View>
-
-          <Text style={styles.questionText}>{currentQuestion?.text ?? 'Loading question...'}</Text>
         </View>
 
-        {/* Options List */}
-        <View style={styles.optionsList}>
-          {(currentQuestion?.options ?? []).map((option, index) => {
-            const isSelected = selectedAnswerIndex === index;
-            const isTrueCorrect = index === currentQuestion?.correctIndex;
+        {/* Stats & Streak Chips */}
+        <View style={styles.topBarRight}>
+          <View style={styles.statChip}>
+            <Flame size={14} color="#F97316" />
+            <Text style={styles.statChipText}>{streak}d</Text>
+          </View>
+          <View style={[styles.statChip, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
+            <Zap size={14} color="#F59E0B" />
+            <Text style={[styles.statChipText, { color: '#F59E0B' }]}>{totalXp}</Text>
+          </View>
+        </View>
+      </View>
 
-            const cardStyle: any[] = [styles.optionCard];
-            const labelBadgeStyle: any[] = [styles.optionLabelBadge];
-            const labelTextStyle: any[] = [styles.optionLabelText];
-            const textStyle: any[] = [styles.optionText];
-            let IconComponent = null;
+      {/* Mode Switcher: Matiks Journey vs Brilliant Courses */}
+      <View style={styles.modeSwitcherRow}>
+        <View style={styles.modeSwitcherContainer}>
+          <TouchableOpacity
+            style={[styles.modeTab, viewMode === 'journey' && styles.modeTabActive]}
+            onPress={() => toggleViewMode('journey')}
+            activeOpacity={0.8}
+          >
+            <Map size={16} color={viewMode === 'journey' ? '#06B6D4' : '#94A3B8'} />
+            <Text style={[styles.modeTabText, viewMode === 'journey' && styles.modeTabTextActive]}>
+              Journey Map
+            </Text>
+          </TouchableOpacity>
 
-            if (hasAnswered) {
-              if (isSelected) {
-                if (isCorrect) {
-                  cardStyle.push(styles.optionCorrect);
-                  textStyle.push(styles.optionTextLight);
-                  labelBadgeStyle.push(styles.labelBadgeCorrect);
-                  IconComponent = <Check size={18} color="#ffffff" />;
-                } else {
-                  cardStyle.push(styles.optionWrong);
-                  textStyle.push(styles.optionTextLight);
-                  labelBadgeStyle.push(styles.labelBadgeWrong);
-                  IconComponent = <X size={18} color="#ffffff" />;
-                }
-              } else if (isTrueCorrect) {
-                cardStyle.push(styles.optionRevealCorrect);
-                textStyle.push(styles.optionTextReveal);
-                labelBadgeStyle.push(styles.labelBadgeReveal);
-                IconComponent = <Check size={16} color="#10b981" />;
-              } else {
-                cardStyle.push(styles.optionDimmed);
-              }
-            }
+          <TouchableOpacity
+            style={[styles.modeTab, viewMode === 'courses' && styles.modeTabActive]}
+            onPress={() => toggleViewMode('courses')}
+            activeOpacity={0.8}
+          >
+            <Layers size={16} color={viewMode === 'courses' ? '#06B6D4' : '#94A3B8'} />
+            <Text style={[styles.modeTabText, viewMode === 'courses' && styles.modeTabTextActive]}>
+              Curriculum List
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
+      {/* Category Pills Tab Bar */}
+      <View style={styles.categoryScrollWrap}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryScrollContent}
+        >
+          {CATEGORY_TABS.map((tab) => {
+            const isActive = activeCategory === tab.id;
             return (
               <TouchableOpacity
-                key={`${currentQuestion?.id ?? 'q'}_${index}`}
-                style={cardStyle}
-                onPress={() => handleSelectOption(index)}
-                activeOpacity={0.75}
-                disabled={hasAnswered}
+                key={tab.id}
+                style={[styles.categoryPill, isActive && styles.categoryPillActive]}
+                onPress={() => handleTabPress(tab.id)}
+                activeOpacity={0.8}
               >
-                <View style={labelBadgeStyle}>
-                  <Text style={labelTextStyle}>{OPTION_LABELS[index]}</Text>
-                </View>
-
-                <Text style={textStyle}>{option}</Text>
-
-                {IconComponent && <View style={styles.iconContainer}>{IconComponent}</View>}
+                <Text style={[styles.categoryPillText, isActive && styles.categoryPillTextActive]}>
+                  {tab.label}
+                </Text>
               </TouchableOpacity>
             );
           })}
-        </View>
+        </ScrollView>
+      </View>
 
-        {/* Step-by-Step Solution & Concept Explanation Box */}
-        {hasAnswered && currentQuestion?.explanation && (
-          <View style={styles.explanationCard}>
-            <View style={styles.explanationHeaderRow}>
-              <Lightbulb size={16} color="#f59e0b" style={{ marginRight: 6 }} />
-              <Text style={styles.explanationTitle}>Concept & Step-by-Step Solution</Text>
-            </View>
-            {currentQuestion?.examTag && (
-              <View style={styles.solutionSourceBadge}>
-                <BookOpen size={11} color="#93c5fd" style={{ marginRight: 5 }} />
-                <Text style={styles.solutionSourceText}>
-                  Official Paper: {currentQuestion.examTag}
-                </Text>
-              </View>
-            )}
-            <Text style={styles.explanationBody}>{currentQuestion.explanation}</Text>
-          </View>
-        )}
-      </ScrollView>
-
-      {/* Bottom Bar with Next / Skip */}
-      <View style={styles.bottomBar}>
-        {hasAnswered ? (
-          <TouchableOpacity style={styles.nextButton} onPress={handleNext} activeOpacity={0.8}>
-            <Text style={styles.nextButtonText}>Next Question</Text>
-            <ArrowRight size={18} color="#ffffff" />
-          </TouchableOpacity>
+      {/* Main Body: Journey Map or Curriculum List */}
+      <View style={styles.contentArea}>
+        {viewMode === 'journey' ? (
+          <MatiksJourneyPath
+            levels={filteredLevels}
+            currentLevel={currentLevel}
+            completedLevels={completedLevels}
+            levelStars={levelStars}
+            userAvatar={profile.avatar}
+            onSelectLevel={handleSelectLevel}
+          />
         ) : (
-          <TouchableOpacity style={styles.skipButton} onPress={handleNext} activeOpacity={0.7}>
-            <Text style={styles.skipButtonText}>Skip Question</Text>
-          </TouchableOpacity>
+          <BrilliantCourseList
+            levels={filteredLevels}
+            currentLevel={currentLevel}
+            completedLevels={completedLevels}
+            levelStars={levelStars}
+            onSelectLevel={handleSelectLevel}
+          />
         )}
       </View>
-    </LinearGradient>
+
+      {/* Bottom Floating Thumb-Zone Action Bar (Matiks Style) */}
+      <View style={styles.floatingBottomBar}>
+        <LinearGradient
+          colors={['rgba(15, 23, 42, 0.96)', 'rgba(10, 15, 29, 0.98)']}
+          style={styles.floatingBarInner}
+        >
+          <View style={styles.floatingBarLeft}>
+            <Text style={styles.floatingBarTag}>NEXT UP • LEVEL {currentLevelData.id}</Text>
+            <Text style={styles.floatingBarTitle} numberOfLines={1}>
+              {currentLevelData.title}
+            </Text>
+            <Text style={styles.floatingBarSub} numberOfLines={1}>
+              {currentLevelData.gradeTag} • +{currentLevelData.xpReward} XP
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.continueBtn}
+            onPress={handleContinueLearning}
+            activeOpacity={0.85}
+          >
+            <LinearGradient
+              colors={['#06B6D4', '#2563EB']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.continueBtnGradient}
+            >
+              <Play size={18} color="#FFFFFF" fill="#FFFFFF" />
+              <Text style={styles.continueBtnText}>LEARN</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </LinearGradient>
+      </View>
+
+      {/* Interactive Lesson Modal */}
+      <LessonInteractiveModal
+        level={activeModalLevel}
+        visible={!!activeModalLevel}
+        onClose={() => setActiveModalLevel(null)}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
+    backgroundColor: '#0A0F1D',
   },
-  header: {
+  topBar: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 54,
+    paddingHorizontal: 16,
+    paddingTop: 10,
     paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E293B',
   },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  trackPill: {
-    backgroundColor: 'rgba(99, 102, 241, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.4)',
-  },
-  trackPillText: {
-    color: '#c7d2fe',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  scoreBox: {
+  topBarLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    gap: 12,
+  },
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#1E293B',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topBarTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#F8FAFC',
+    letterSpacing: 0.3,
+  },
+  topBarSub: {
+    fontSize: 11,
+    color: '#94A3B8',
+    fontWeight: '500',
+  },
+  topBarRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  statChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(249, 115, 22, 0.15)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.3)',
+    borderColor: 'rgba(249, 115, 22, 0.3)',
   },
-  scoreText: {
-    color: '#f59e0b',
+  statChipText: {
+    color: '#F97316',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  modeSwitcherRow: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 4,
+  },
+  modeSwitcherContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#111827',
+    borderRadius: 14,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+  },
+  modeTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  modeTabActive: {
+    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.4)',
+  },
+  modeTabText: {
+    color: '#94A3B8',
     fontSize: 13,
-    fontWeight: '900',
+    fontWeight: '600',
   },
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 12,
-  },
-  metaRound: {
-    color: '#f8fafc',
-    fontSize: 16,
+  modeTabTextActive: {
+    color: '#38BDF8',
     fontWeight: '800',
   },
-  accuracyPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+  categoryScrollWrap: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E293B',
+    paddingVertical: 8,
   },
-  accuracyText: {
-    color: '#10b981',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-  },
-  questionCard: {
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-  },
-  tagRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  categoryScrollContent: {
+    paddingHorizontal: 16,
     gap: 8,
-    marginBottom: 12,
   },
-  examTagBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(96, 165, 250, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+  categoryPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: '#111827',
     borderWidth: 1,
-    borderColor: 'rgba(96, 165, 250, 0.3)',
+    borderColor: '#1E293B',
   },
-  examTagText: {
-    color: '#93c5fd',
-    fontSize: 11,
+  categoryPillActive: {
+    backgroundColor: 'rgba(6, 182, 212, 0.2)',
+    borderColor: '#06B6D4',
+  },
+  categoryPillText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontWeight: '600',
+  },
+  categoryPillTextActive: {
+    color: '#38BDF8',
     fontWeight: '800',
   },
-  difficultyTag: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+  contentArea: {
+    flex: 1,
   },
-  difficultyTagText: {
-    color: '#94a3b8',
+  floatingBottomBar: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    right: 16,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  floatingBarInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: 'rgba(6, 182, 212, 0.4)',
+  },
+  floatingBarLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
+  floatingBarTag: {
     fontSize: 10,
     fontWeight: '800',
+    color: '#06B6D4',
+    letterSpacing: 0.6,
   },
-  questionText: {
-    color: '#f8fafc',
-    fontSize: 18,
-    fontWeight: '700',
-    lineHeight: 26,
-  },
-  optionsList: {
-    gap: 12,
-    marginBottom: 18,
-  },
-  optionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  optionCorrect: {
-    backgroundColor: '#10b981',
-    borderColor: '#059669',
-  },
-  optionWrong: {
-    backgroundColor: '#ef4444',
-    borderColor: '#dc2626',
-  },
-  optionRevealCorrect: {
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-    borderColor: '#10b981',
-    borderWidth: 1.5,
-  },
-  optionDimmed: {
-    opacity: 0.45,
-  },
-  optionLabelBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  labelBadgeCorrect: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  labelBadgeWrong: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  labelBadgeReveal: {
-    backgroundColor: 'rgba(16, 185, 129, 0.25)',
-  },
-  optionLabelText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '900',
-  },
-  optionText: {
-    flex: 1,
-    color: '#e2e8f0',
-    fontSize: 16,
-    fontWeight: '600',
-    lineHeight: 22,
-  },
-  optionTextLight: {
-    color: '#ffffff',
+  floatingBarTitle: {
+    fontSize: 15,
     fontWeight: '800',
+    color: '#F8FAFC',
+    marginTop: 2,
   },
-  optionTextReveal: {
-    color: '#a7f3d0',
-    fontWeight: '800',
-  },
-  iconContainer: {
-    marginLeft: 8,
-  },
-  explanationCard: {
-    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.3)',
-    marginBottom: 20,
-  },
-  explanationHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  explanationTitle: {
-    color: '#fbbf24',
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  solutionSourceBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(96, 165, 250, 0.15)',
-    borderColor: 'rgba(96, 165, 250, 0.3)',
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    marginBottom: 8,
-  },
-  solutionSourceText: {
-    color: '#93c5fd',
+  floatingBarSub: {
     fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.3,
+    color: '#94A3B8',
+    marginTop: 2,
   },
-  explanationBody: {
-    color: '#fde68a',
-    fontSize: 14,
-    lineHeight: 21,
-    fontWeight: '500',
+  continueBtn: {
+    borderRadius: 14,
+    overflow: 'hidden',
   },
-  bottomBar: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  nextButton: {
+  continueBtnGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#6366f1',
-    borderRadius: 16,
-    paddingVertical: 16,
-    gap: 8,
+    gap: 6,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 14,
   },
-  nextButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  skipButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 16,
-    paddingVertical: 16,
-  },
-  skipButtonText: {
-    color: '#94a3b8',
+  continueBtnText: {
+    color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
 });

@@ -2,8 +2,17 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { safeStorage } from '../utils/safeStorage';
 import { ExamTrack } from '../types/game';
+import {
+  signInWithEmail,
+  signUpWithEmail,
+  signOutUser,
+  getCurrentUserProfile,
+  updateDbProfile,
+} from '../services/authService';
 
 export interface UserProfile {
+  id?: string;
+  username?: string;
   name: string;
   email: string;
   avatar: string;
@@ -13,6 +22,10 @@ export interface UserProfile {
   rankTitle: string;
   isLoggedIn: boolean;
   memberSince: string;
+  totalMatches?: number;
+  wins?: number;
+  losses?: number;
+  draws?: number;
 }
 
 export interface UserSettings {
@@ -27,22 +40,53 @@ export interface UserSettings {
 interface UserStore {
   profile: UserProfile;
   settings: UserSettings;
+  isLoadingAuth: boolean;
+  authError: string | null;
   updateProfile: (updates: Partial<UserProfile>) => void;
   updateSettings: (updates: Partial<UserSettings>) => void;
   login: (name: string, email: string, institution?: string, targetExam?: ExamTrack) => void;
-  logout: () => void;
+  loginWithSupabase: (
+    email: string,
+    password: string
+  ) => Promise<{ success: boolean; error?: string }>;
+  signUpWithSupabase: (
+    email: string,
+    password: string,
+    name: string,
+    targetExam?: ExamTrack
+  ) => Promise<{
+    success: boolean;
+    error?: string;
+    requiresEmailConfirmation?: boolean;
+    message?: string;
+  }>;
+  logout: () => Promise<void>;
+  initAuth: () => Promise<void>;
+}
+
+function getRankTitle(rating: number): string {
+  if (rating >= 1800) return 'Grandmaster Scholar';
+  if (rating >= 1600) return 'Diamond Master';
+  if (rating >= 1400) return 'Platinum Aspirant';
+  if (rating >= 1200) return 'Gold Scholar';
+  if (rating >= 1000) return 'Silver Challenger';
+  return 'Bronze Aspirant';
 }
 
 const DEFAULT_PROFILE: UserProfile = {
-  name: 'Arjun Aspirant',
-  email: 'arjun.aspirant@appticlash.io',
+  name: 'Aspirant',
+  email: 'aspirant@appticlash.io',
   avatar: '🎓',
-  institution: 'IIT / NIT Aspirant',
+  institution: 'GATE / CAT Aspirant',
   targetExam: 'gate',
-  rating: 1280,
+  rating: 1200,
   rankTitle: 'Gold Scholar',
-  isLoggedIn: true,
+  isLoggedIn: false,
   memberSince: 'September 2026',
+  totalMatches: 0,
+  wins: 0,
+  losses: 0,
+  draws: 0,
 };
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -56,17 +100,32 @@ const DEFAULT_SETTINGS: UserSettings = {
 
 export const useUserStore = create<UserStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       profile: DEFAULT_PROFILE,
       settings: DEFAULT_SETTINGS,
+      isLoadingAuth: false,
+      authError: null,
 
-      updateProfile: (updates) =>
-        set((state) => ({
-          profile: {
-            ...state.profile,
-            ...updates,
-          },
-        })),
+      updateProfile: (updates) => {
+        set((state) => {
+          const newProfile = { ...state.profile, ...updates };
+          // If rating changed, update rankTitle
+          if (updates.rating !== undefined) {
+            newProfile.rankTitle = getRankTitle(updates.rating);
+          }
+          return { profile: newProfile };
+        });
+
+        // Sync to Supabase if logged in
+        const current = get().profile;
+        if (current.id && !current.id.startsWith('mock_')) {
+          updateDbProfile(current.id, {
+            display_name: current.name,
+            exam_track: current.targetExam,
+            avatar_url: current.avatar,
+          }).catch(console.error);
+        }
+      },
 
       updateSettings: (updates) =>
         set((state) => ({
@@ -76,6 +135,7 @@ export const useUserStore = create<UserStore>()(
           },
         })),
 
+      // Local / Offline fallback login
       login: (name, email, institution = 'Engineering Aspirant', targetExam = 'gate') =>
         set((state) => ({
           profile: {
@@ -88,15 +148,123 @@ export const useUserStore = create<UserStore>()(
           },
         })),
 
-      logout: () =>
+      // Supabase Email & Password Login
+      loginWithSupabase: async (email, password) => {
+        set({ isLoadingAuth: true, authError: null });
+        const res = await signInWithEmail(email, password);
+        set({ isLoadingAuth: false });
+
+        if (!res.success || !res.profile) {
+          const errMsg = res.error || 'Login failed. Check your credentials.';
+          set({ authError: errMsg });
+          return { success: false, error: errMsg };
+        }
+
+        const p = res.profile;
         set((state) => ({
+          authError: null,
           profile: {
             ...state.profile,
+            id: p.id,
+            username: p.username,
+            name: p.displayName || p.username,
+            email: p.email || email,
+            targetExam: p.examTrack,
+            rating: p.ratingElo,
+            rankTitle: getRankTitle(p.ratingElo),
+            totalMatches: p.totalMatches,
+            wins: p.wins,
+            losses: p.losses,
+            draws: p.draws,
+            isLoggedIn: true,
+          },
+        }));
+
+        return { success: true };
+      },
+
+      // Supabase Email & Password Sign Up
+      signUpWithSupabase: async (email, password, name, targetExam = 'gate') => {
+        set({ isLoadingAuth: true, authError: null });
+        const res = await signUpWithEmail(email, password, name, targetExam);
+        set({ isLoadingAuth: false });
+
+        if (!res.success || !res.profile) {
+          const errMsg = res.error || 'Sign up failed. Please try again.';
+          set({ authError: errMsg });
+          return { success: false, error: errMsg };
+        }
+
+        const p = res.profile;
+        set((state) => ({
+          authError: null,
+          profile: {
+            ...state.profile,
+            id: p.id,
+            username: p.username,
+            name: p.displayName || name,
+            email: p.email || email,
+            targetExam: p.examTrack || targetExam,
+            rating: p.ratingElo,
+            rankTitle: getRankTitle(p.ratingElo),
+            totalMatches: p.totalMatches,
+            wins: p.wins,
+            losses: p.losses,
+            draws: p.draws,
+            isLoggedIn: !res.requiresEmailConfirmation,
+          },
+        }));
+
+        return {
+          success: true,
+          requiresEmailConfirmation: res.requiresEmailConfirmation,
+          message: res.message,
+        };
+      },
+
+      // Supabase Sign Out
+      logout: async () => {
+        set({ isLoadingAuth: true });
+        await signOutUser();
+        set({
+          isLoadingAuth: false,
+          authError: null,
+          profile: {
+            ...DEFAULT_PROFILE,
+            isLoggedIn: false,
             name: 'Guest Player',
             email: 'guest@appticlash.io',
-            isLoggedIn: false,
           },
-        })),
+        });
+      },
+
+      // Auto check active Supabase session on app launch
+      initAuth: async () => {
+        try {
+          const p = await getCurrentUserProfile();
+          if (p) {
+            set((state) => ({
+              profile: {
+                ...state.profile,
+                id: p.id,
+                username: p.username,
+                name: p.displayName || p.username,
+                email: p.email,
+                targetExam: p.examTrack,
+                rating: p.ratingElo,
+                rankTitle: getRankTitle(p.ratingElo),
+                totalMatches: p.totalMatches,
+                wins: p.wins,
+                losses: p.losses,
+                draws: p.draws,
+                isLoggedIn: true,
+              },
+            }));
+          }
+        } catch (err) {
+          console.warn('[UserStore] Could not restore auth session:', err);
+        }
+      },
     }),
     {
       name: 'appticlash-user-store',

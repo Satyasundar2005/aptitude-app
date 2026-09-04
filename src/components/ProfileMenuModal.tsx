@@ -11,6 +11,7 @@ import {
   Alert,
   Dimensions,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -40,6 +41,12 @@ import {
   HelpCircle,
   Sparkles,
   BookOpen,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  AlertCircle,
+  ShieldCheck,
 } from 'lucide-react-native';
 import { useUserStore } from '../store/useUserStore';
 import { useGameStore } from '../store/useGameStore';
@@ -68,7 +75,17 @@ interface ProfileMenuModalProps {
 
 export default function ProfileMenuModal({ visible, onClose, onNavigate }: ProfileMenuModalProps) {
   const insets = useSafeAreaInsets();
-  const { profile, settings, updateProfile, updateSettings, logout, login } = useUserStore();
+  const {
+    profile,
+    settings,
+    updateProfile,
+    updateSettings,
+    logout,
+    loginWithSupabase,
+    signUpWithSupabase,
+    isLoadingAuth,
+    authError,
+  } = useUserStore();
   const { totalSolved, bestStreak, examTrack, setExamTrack } = useGameStore();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'settings' | 'help'>('profile');
@@ -81,9 +98,14 @@ export default function ProfileMenuModal({ visible, onClose, onNavigate }: Profi
   const [editInstitution, setEditInstitution] = useState(profile.institution);
   const [selectedAvatar, setSelectedAvatar] = useState(profile.avatar);
 
-  // Login form state
-  const [loginName, setLoginName] = useState('');
-  const [loginEmail, setLoginEmail] = useState('');
+  // Supabase Auth Form State
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authName, setAuthName] = useState('');
+  const [authTrack, setAuthTrack] = useState<ExamTrack>('gate');
+  const [showPassword, setShowPassword] = useState(false);
+  const [localAuthError, setLocalAuthError] = useState<string | null>(null);
 
   const handleOpenEdit = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -112,24 +134,69 @@ export default function ProfileMenuModal({ visible, onClose, onNavigate }: Profi
       {
         text: 'Log Out',
         style: 'destructive',
-        onPress: () => {
-          logout();
+        onPress: async () => {
+          await logout();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         },
       },
     ]);
   };
 
-  const handleLoginSubmit = () => {
-    if (!loginName.trim()) {
-      Alert.alert('Required', 'Please enter your name.');
+  const handleAuthSubmit = async () => {
+    setLocalAuthError(null);
+    if (!authEmail.trim()) {
+      setLocalAuthError('Please enter your email address.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    login(loginName, loginEmail || `${loginName.toLowerCase().replace(/\s+/g, '')}@appticlash.io`);
-    setShowLoginModal(false);
-    setLoginName('');
-    setLoginEmail('');
+    if (!authPassword.trim()) {
+      setLocalAuthError('Please enter your password.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+
+    if (authMode === 'signup') {
+      if (!authName.trim()) {
+        setLocalAuthError('Please enter your name.');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        return;
+      }
+      if (authPassword.length < 6) {
+        setLocalAuthError('Password must be at least 6 characters.');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        return;
+      }
+
+      const res = await signUpWithSupabase(authEmail, authPassword, authName, authTrack);
+      if (res.success) {
+        if (res.requiresEmailConfirmation) {
+          Alert.alert(
+            'Check Your Email',
+            res.message || 'Please verify your email to complete registration.'
+          );
+        } else {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        setShowLoginModal(false);
+        setAuthPassword('');
+        setAuthEmail('');
+        setAuthName('');
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        setLocalAuthError(res.error || 'Failed to create account.');
+      }
+    } else {
+      const res = await loginWithSupabase(authEmail, authPassword);
+      if (res.success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setShowLoginModal(false);
+        setAuthPassword('');
+        setAuthEmail('');
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        setLocalAuthError(res.error || 'Failed to sign in.');
+      }
+    }
   };
 
   const handleResetStats = () => {
@@ -263,18 +330,27 @@ export default function ProfileMenuModal({ visible, onClose, onNavigate }: Profi
                             <Text style={styles.profileName} numberOfLines={1}>
                               {profile.name}
                             </Text>
-                            {profile.isLoggedIn && (
+                            {profile.isLoggedIn ? (
                               <View style={styles.verifiedBadge}>
                                 <Sparkles size={11} color="#38bdf8" />
                               </View>
-                            )}
+                            ) : null}
                           </View>
                           <Text style={styles.profileEmail} numberOfLines={1}>
-                            {profile.email}
+                            {profile.isLoggedIn ? profile.email : 'Local Guest Account'}
                           </Text>
-                          <Text style={styles.profileInstitution} numberOfLines={1}>
-                            🏛️ {profile.institution}
-                          </Text>
+                          {profile.username ? (
+                            <Text
+                              style={[styles.profileInstitution, { color: '#818cf8' }]}
+                              numberOfLines={1}
+                            >
+                              @{profile.username}
+                            </Text>
+                          ) : (
+                            <Text style={styles.profileInstitution} numberOfLines={1}>
+                              🏛️ {profile.institution}
+                            </Text>
+                          )}
                         </View>
                       </View>
 
@@ -285,15 +361,68 @@ export default function ProfileMenuModal({ visible, onClose, onNavigate }: Profi
                           <Text style={styles.ratingValue}>{profile.rating} ELO</Text>
                           <Text style={styles.ratingTier}>• {profile.rankTitle}</Text>
                         </View>
-                        <TouchableOpacity
-                          style={styles.editProfileBtn}
-                          onPress={handleOpenEdit}
-                          activeOpacity={0.7}
-                        >
-                          <Edit3 size={12} color="#818cf8" style={{ marginRight: 4 }} />
-                          <Text style={styles.editProfileText}>Edit</Text>
-                        </TouchableOpacity>
+                        {profile.isLoggedIn ? (
+                          <TouchableOpacity
+                            style={styles.editProfileBtn}
+                            onPress={handleOpenEdit}
+                            activeOpacity={0.7}
+                          >
+                            <Edit3 size={12} color="#818cf8" style={{ marginRight: 4 }} />
+                            <Text style={styles.editProfileText}>Edit</Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <TouchableOpacity
+                            style={[
+                              styles.editProfileBtn,
+                              {
+                                borderColor: '#38bdf8',
+                                backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                              },
+                            ]}
+                            onPress={() => setShowLoginModal(true)}
+                            activeOpacity={0.7}
+                          >
+                            <LogIn size={12} color="#38bdf8" style={{ marginRight: 4 }} />
+                            <Text style={[styles.editProfileText, { color: '#38bdf8' }]}>
+                              Sign In
+                            </Text>
+                          </TouchableOpacity>
+                        )}
                       </View>
+
+                      {/* Online Duel Record (If Logged In) */}
+                      {profile.isLoggedIn && (
+                        <View style={styles.duelRecordRow}>
+                          <View style={styles.duelRecordItem}>
+                            <Text style={styles.duelRecordVal}>{profile.totalMatches || 0}</Text>
+                            <Text style={styles.duelRecordLbl}>Matches</Text>
+                          </View>
+                          <View style={styles.duelRecordDivider} />
+                          <View style={styles.duelRecordItem}>
+                            <Text style={[styles.duelRecordVal, { color: '#10b981' }]}>
+                              {profile.wins || 0}
+                            </Text>
+                            <Text style={styles.duelRecordLbl}>Wins</Text>
+                          </View>
+                          <View style={styles.duelRecordDivider} />
+                          <View style={styles.duelRecordItem}>
+                            <Text style={[styles.duelRecordVal, { color: '#f43f5e' }]}>
+                              {profile.losses || 0}
+                            </Text>
+                            <Text style={styles.duelRecordLbl}>Losses</Text>
+                          </View>
+                          <View style={styles.duelRecordDivider} />
+                          <View style={styles.duelRecordItem}>
+                            <Text style={[styles.duelRecordVal, { color: '#38bdf8' }]}>
+                              {profile.totalMatches && profile.totalMatches > 0
+                                ? Math.round(((profile.wins || 0) / profile.totalMatches) * 100)
+                                : 0}
+                              %
+                            </Text>
+                            <Text style={styles.duelRecordLbl}>Win %</Text>
+                          </View>
+                        </View>
+                      )}
                     </LinearGradient>
                   </View>
 
@@ -681,59 +810,207 @@ export default function ProfileMenuModal({ visible, onClose, onNavigate }: Profi
         </View>
       </Modal>
 
-      {/* SIGN IN MODAL */}
+      {/* SUPABASE SIGN IN / SIGN UP MODAL */}
       <Modal
         visible={showLoginModal}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowLoginModal(false)}
+        onRequestClose={() => {
+          setShowLoginModal(false);
+          setLocalAuthError(null);
+        }}
       >
         <View style={styles.subModalOverlay}>
           <View style={styles.subModalCard}>
             <View style={styles.subModalHeader}>
-              <Text style={styles.subModalTitle}>Sign In / Register</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <ShieldCheck size={20} color="#818cf8" style={{ marginRight: 8 }} />
+                <Text style={styles.subModalTitle}>
+                  {authMode === 'signin' ? 'Sign In' : 'Create Account'}
+                </Text>
+              </View>
               <TouchableOpacity
-                onPress={() => setShowLoginModal(false)}
+                onPress={() => {
+                  setShowLoginModal(false);
+                  setLocalAuthError(null);
+                }}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <X size={20} color="#94a3b8" />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.subModalDesc}>
-              Sign in to save your 10-Yr PYQ duel record and sync your ELO ranking with online
-              rivals.
-            </Text>
+            {/* Mode Switcher Tabs */}
+            <View style={styles.authModeToggle}>
+              <TouchableOpacity
+                style={[styles.authToggleBtn, authMode === 'signin' && styles.authToggleBtnActive]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setAuthMode('signin');
+                  setLocalAuthError(null);
+                }}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.authToggleText,
+                    authMode === 'signin' && styles.authToggleTextActive,
+                  ]}
+                >
+                  Sign In
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.authToggleBtn, authMode === 'signup' && styles.authToggleBtnActive]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setAuthMode('signup');
+                  setLocalAuthError(null);
+                }}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.authToggleText,
+                    authMode === 'signup' && styles.authToggleTextActive,
+                  ]}
+                >
+                  Create Account
+                </Text>
+              </TouchableOpacity>
+            </View>
 
-            <Text style={styles.inputLabel}>Your Name</Text>
-            <TextInput
-              style={styles.textInput}
-              value={loginName}
-              onChangeText={setLoginName}
-              placeholder="Enter your name"
-              placeholderTextColor="#64748b"
-              autoFocus
-            />
+            {/* Error Message Box */}
+            {(localAuthError || authError) && (
+              <View style={styles.authErrorBox}>
+                <AlertCircle size={15} color="#f43f5e" style={{ marginRight: 6 }} />
+                <Text style={styles.authErrorText}>{localAuthError || authError}</Text>
+              </View>
+            )}
 
-            <Text style={styles.inputLabel}>Email Address</Text>
-            <TextInput
-              style={styles.textInput}
-              value={loginEmail}
-              onChangeText={setLoginEmail}
-              placeholder="student@example.com"
-              placeholderTextColor="#64748b"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 380 }}>
+              {/* Full Name (Sign Up only) */}
+              {authMode === 'signup' && (
+                <>
+                  <Text style={styles.inputLabel}>Full Name / Aspirant Name</Text>
+                  <View style={styles.authInputContainer}>
+                    <User size={16} color="#64748b" style={{ marginRight: 8 }} />
+                    <TextInput
+                      style={styles.authInputField}
+                      value={authName}
+                      onChangeText={setAuthName}
+                      placeholder="e.g. Arjun Sharma"
+                      placeholderTextColor="#64748b"
+                      autoCapitalize="words"
+                    />
+                  </View>
 
-            <TouchableOpacity
-              style={styles.saveProfileBtn}
-              onPress={handleLoginSubmit}
-              activeOpacity={0.8}
-            >
-              <LogIn size={18} color="#ffffff" style={{ marginRight: 6 }} />
-              <Text style={styles.saveProfileText}>Enter ApptiClash</Text>
-            </TouchableOpacity>
+                  <Text style={styles.inputLabel}>Primary Exam Track</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.trackScrollRow}
+                  >
+                    {EXAM_OPTIONS.filter((e) => e.id !== 'all').map((e) => {
+                      const isSelected = authTrack === e.id;
+                      return (
+                        <TouchableOpacity
+                          key={e.id}
+                          style={[styles.trackPill, isSelected && styles.trackPillActive]}
+                          onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setAuthTrack(e.id);
+                          }}
+                        >
+                          <Text
+                            style={[styles.trackPillText, isSelected && styles.trackPillTextActive]}
+                          >
+                            {e.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </>
+              )}
+
+              {/* Email Address */}
+              <Text style={styles.inputLabel}>Email Address</Text>
+              <View style={styles.authInputContainer}>
+                <Mail size={16} color="#64748b" style={{ marginRight: 8 }} />
+                <TextInput
+                  style={styles.authInputField}
+                  value={authEmail}
+                  onChangeText={setAuthEmail}
+                  placeholder="aspirant@example.com"
+                  placeholderTextColor="#64748b"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+
+              {/* Password */}
+              <Text style={styles.inputLabel}>Password</Text>
+              <View style={styles.authInputContainer}>
+                <Lock size={16} color="#64748b" style={{ marginRight: 8 }} />
+                <TextInput
+                  style={[styles.authInputField, { flex: 1 }]}
+                  value={authPassword}
+                  onChangeText={setAuthPassword}
+                  placeholder={
+                    authMode === 'signup' ? 'Minimum 6 characters' : 'Enter your password'
+                  }
+                  placeholderTextColor="#64748b"
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  {showPassword ? (
+                    <EyeOff size={16} color="#94a3b8" />
+                  ) : (
+                    <Eye size={16} color="#94a3b8" />
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              {/* Submit Button */}
+              <TouchableOpacity
+                style={[styles.saveProfileBtn, isLoadingAuth && { opacity: 0.7 }]}
+                onPress={handleAuthSubmit}
+                disabled={isLoadingAuth}
+                activeOpacity={0.8}
+              >
+                {isLoadingAuth ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <>
+                    <LogIn size={18} color="#ffffff" style={{ marginRight: 6 }} />
+                    <Text style={styles.saveProfileText}>
+                      {authMode === 'signin' ? 'Sign In to ApptiClash' : 'Create Account'}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              {/* Switch Mode Helper Link */}
+              <TouchableOpacity
+                style={styles.authSwitchBtn}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
+                  setLocalAuthError(null);
+                }}
+              >
+                <Text style={styles.authSwitchText}>
+                  {authMode === 'signin'
+                    ? "Don't have an account? Sign Up"
+                    : 'Already have an account? Sign In'}
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -1323,5 +1600,132 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
     color: '#ffffff',
+  },
+  // Duel record row inside profile card
+  duelRecordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  duelRecordItem: {
+    alignItems: 'center',
+  },
+  duelRecordVal: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#ffffff',
+  },
+  duelRecordLbl: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    marginTop: 2,
+  },
+  duelRecordDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  // Auth Modal Controls
+  authModeToggle: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  authToggleBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 9,
+  },
+  authToggleBtnActive: {
+    backgroundColor: '#6366f1',
+  },
+  authToggleText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#94a3b8',
+  },
+  authToggleTextActive: {
+    color: '#ffffff',
+  },
+  authErrorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(244, 63, 94, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(244, 63, 94, 0.3)',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 12,
+  },
+  authErrorText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#f43f5e',
+    flex: 1,
+  },
+  authInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    marginBottom: 12,
+  },
+  authInputField: {
+    flex: 1,
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+    paddingVertical: 4,
+  },
+  trackScrollRow: {
+    flexDirection: 'row',
+    marginBottom: 14,
+  },
+  trackPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  trackPillActive: {
+    backgroundColor: 'rgba(99, 102, 241, 0.3)',
+    borderColor: '#818cf8',
+  },
+  trackPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#94a3b8',
+  },
+  trackPillTextActive: {
+    color: '#ffffff',
+  },
+  authSwitchBtn: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    marginTop: 8,
+  },
+  authSwitchText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#818cf8',
   },
 });

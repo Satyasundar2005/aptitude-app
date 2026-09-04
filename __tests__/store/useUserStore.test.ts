@@ -75,8 +75,8 @@ describe('useUserStore Zustand Store', () => {
     expect(state.profile.isLoggedIn).toBe(true);
   });
 
-  it('resets to guest state on logout', () => {
-    useUserStore.getState().logout();
+  it('resets to guest state on logout', async () => {
+    await useUserStore.getState().logout();
 
     const state = useUserStore.getState();
     expect(state.profile.name).toBe('Guest Player');
