@@ -1,10 +1,4 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[];
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
   public: {
@@ -288,7 +282,8 @@ export type Database = {
     Enums: {
       exam_track_enum: 'all' | 'gate' | 'cat' | 'gre' | 'ese' | 'placement' | 'banking';
       difficulty_enum: 'easy' | 'medium' | 'hard';
-      room_status_enum: 'lobby' | 'countdown' | 'playing' | 'round_result' | 'game_over' | 'abandoned';
+      room_status_enum:
+        'lobby' | 'countdown' | 'playing' | 'round_result' | 'game_over' | 'abandoned';
     };
     CompositeTypes: {
       [_ in never]: never;

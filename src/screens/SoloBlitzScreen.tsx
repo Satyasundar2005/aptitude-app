@@ -161,10 +161,13 @@ export default function SoloBlitzScreen() {
 
   // Performance calculations
   const totalCorrect = blitzHistory.filter((h) => h.isCorrect).length;
-  const accuracyPct = blitzHistory.length > 0 ? Math.round((totalCorrect / blitzHistory.length) * 100) : 0;
+  const accuracyPct =
+    blitzHistory.length > 0 ? Math.round((totalCorrect / blitzHistory.length) * 100) : 0;
   const avgTimePerQ =
     blitzHistory.length > 0
-      ? Math.round((blitzHistory.reduce((acc, h) => acc + h.timeTaken, 0) / blitzHistory.length) * 10) / 10
+      ? Math.round(
+          (blitzHistory.reduce((acc, h) => acc + h.timeTaken, 0) / blitzHistory.length) * 10
+        ) / 10
       : 0;
 
   return (
@@ -176,7 +179,9 @@ export default function SoloBlitzScreen() {
         <View style={styles.countdownOverlay}>
           <View style={styles.countdownTrackPill}>
             <Sparkles size={14} color="#818cf8" style={{ marginRight: 6 }} />
-            <Text style={styles.countdownTrackText}>{trackTitle.toUpperCase()} • 10-Q TIMED SPRINT</Text>
+            <Text style={styles.countdownTrackText}>
+              {trackTitle.toUpperCase()} • 10-Q TIMED SPRINT
+            </Text>
           </View>
           <Text style={styles.countdownNumber}>{countdown === 0 ? 'START!' : countdown}</Text>
           <Text style={styles.countdownSub}>PACE: {pace.time} PER QUESTION</Text>
@@ -200,7 +205,9 @@ export default function SoloBlitzScreen() {
             <View style={styles.metricsGrid}>
               <View style={styles.metricBox}>
                 <Award size={18} color="#818cf8" style={{ marginBottom: 4 }} />
-                <Text style={styles.metricValue}>{totalCorrect} / {totalRounds}</Text>
+                <Text style={styles.metricValue}>
+                  {totalCorrect} / {totalRounds}
+                </Text>
                 <Text style={styles.metricLabel}>Correct</Text>
               </View>
 
@@ -224,7 +231,12 @@ export default function SoloBlitzScreen() {
                 <View key={idx} style={styles.reviewItem}>
                   <View style={styles.reviewHeaderRow}>
                     <View style={styles.reviewQIndexRow}>
-                      <View style={[styles.statusDot, { backgroundColor: item.isCorrect ? '#10b981' : '#ef4444' }]} />
+                      <View
+                        style={[
+                          styles.statusDot,
+                          { backgroundColor: item.isCorrect ? '#10b981' : '#ef4444' },
+                        ]}
+                      />
                       <Text style={styles.reviewQIndex}>Q{idx + 1}</Text>
                       {item.question.examTag && (
                         <Text style={styles.reviewExamTag}>{item.question.examTag}</Text>
@@ -233,7 +245,9 @@ export default function SoloBlitzScreen() {
                     <Text style={styles.reviewTime}>{item.timeTaken}s</Text>
                   </View>
 
-                  <Text style={styles.reviewQText} numberOfLines={2}>{item.question.text}</Text>
+                  <Text style={styles.reviewQText} numberOfLines={2}>
+                    {item.question.text}
+                  </Text>
 
                   {item.question.explanation && (
                     <View style={styles.reviewExplanationBox}>
@@ -247,7 +261,11 @@ export default function SoloBlitzScreen() {
 
             {/* Action Buttons */}
             <View style={styles.actionButtonsRow}>
-              <TouchableOpacity style={styles.rematchButton} onPress={handleRetakeTest} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={styles.rematchButton}
+                onPress={handleRetakeTest}
+                activeOpacity={0.8}
+              >
                 <RotateCcw size={16} color="#ffffff" style={{ marginRight: 6 }} />
                 <Text style={styles.rematchButtonText}>Retake Test</Text>
               </TouchableOpacity>
@@ -271,7 +289,12 @@ export default function SoloBlitzScreen() {
           <Text style={styles.trackPillText}>{trackTitle}</Text>
         </View>
 
-        <View style={[styles.pacePill, { borderColor: pace.color + '40', backgroundColor: pace.color + '15' }]}>
+        <View
+          style={[
+            styles.pacePill,
+            { borderColor: pace.color + '40', backgroundColor: pace.color + '15' },
+          ]}
+        >
           <Clock size={11} color={pace.color} style={{ marginRight: 4 }} />
           <Text style={[styles.pacePillText, { color: pace.color }]}>{pace.time}</Text>
         </View>
@@ -280,9 +303,16 @@ export default function SoloBlitzScreen() {
       {/* PROGRESS TRACKER & 10-QUESTION STATUS DOTS */}
       <View style={styles.progressContainer}>
         <View style={styles.progressHeaderRow}>
-          <Text style={styles.questionCounterText}>Question {roundNumber} of {totalRounds}</Text>
+          <Text style={styles.questionCounterText}>
+            Question {roundNumber} of {totalRounds}
+          </Text>
 
-          <Animated.View style={[styles.timerBadge, { borderColor: timerColor + '40', transform: [{ scale: timerPulse }] }]}>
+          <Animated.View
+            style={[
+              styles.timerBadge,
+              { borderColor: timerColor + '40', transform: [{ scale: timerPulse }] },
+            ]}
+          >
             <Timer size={13} color={timerColor} style={{ marginRight: 4 }} />
             <Text style={[styles.timerText, { color: timerColor }]}>{timer}s</Text>
           </Animated.View>
@@ -294,7 +324,7 @@ export default function SoloBlitzScreen() {
             const historyItem = blitzHistory[i];
             const isCurrent = i === roundNumber - 1;
 
-            let dotStyle: any[] = [styles.dot];
+            const dotStyle: any[] = [styles.dot];
             if (historyItem) {
               dotStyle.push(historyItem.isCorrect ? styles.dotCorrect : styles.dotWrong);
             } else if (isCurrent) {
@@ -347,10 +377,10 @@ export default function SoloBlitzScreen() {
             const isSelected = selectedOption === index;
             const isTrueCorrect = index === currentQuestion?.correctIndex;
 
-            let cardStyle: any[] = [styles.optionCard];
-            let labelBadgeStyle: any[] = [styles.optionLabelBadge];
-            let labelTextStyle: any[] = [styles.optionLabelText];
-            let textStyle: any[] = [styles.optionText];
+            const cardStyle: any[] = [styles.optionCard];
+            const labelBadgeStyle: any[] = [styles.optionLabelBadge];
+            const labelTextStyle: any[] = [styles.optionLabelText];
+            const textStyle: any[] = [styles.optionText];
             let StatusIcon = null;
 
             if (hasAnswered) {

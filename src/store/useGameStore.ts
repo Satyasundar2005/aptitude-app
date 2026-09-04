@@ -209,7 +209,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
   startQuickMatch: (difficulty: Difficulty, track: ExamTrack) => {
     clearOpponentTimer();
     const p1Name = useUserStore.getState().profile.name || 'You';
-    const mockRivals = ['Aditya (IIT-B)', 'Neha (IIM-A)', 'Rohit (NIT-T)', 'Pooja (BITS)', 'Vikram (DTU)'];
+    const mockRivals = [
+      'Aditya (IIT-B)',
+      'Neha (IIM-A)',
+      'Rohit (NIT-T)',
+      'Pooja (BITS)',
+      'Vikram (DTU)',
+    ];
     const matchedRival = mockRivals[Math.floor(Math.random() * mockRivals.length)];
     const question = generateQuestion(difficulty, track);
 
@@ -339,9 +345,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     if (currentPlayer.answeredCorrect !== null) return;
 
-    const updatedPlayer = evaluatePlayer(currentPlayer, state.currentQuestion, answerIndex, timestamp);
+    const updatedPlayer = evaluatePlayer(
+      currentPlayer,
+      state.currentQuestion,
+      answerIndex,
+      timestamp
+    );
 
-    const newTotalSolved = updatedPlayer.answeredCorrect ? state.totalSolved + 1 : state.totalSolved;
+    const newTotalSolved = updatedPlayer.answeredCorrect
+      ? state.totalSolved + 1
+      : state.totalSolved;
     const newBestStreak = Math.max(state.bestStreak, updatedPlayer.streak);
 
     set({
@@ -365,7 +378,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         const opponentDelay = Math.floor(1000 + Math.random() * 2500);
         opponentTimeoutId = setTimeout(() => {
           const s = get();
-          if (s.phase !== 'playing' || !s.currentQuestion || s.player2.answeredCorrect !== null) return;
+          if (s.phase !== 'playing' || !s.currentQuestion || s.player2.answeredCorrect !== null)
+            return;
           // 80% probability of online rival answering correctly
           const isCorrect = Math.random() < 0.82;
           const oppIdx = isCorrect
@@ -390,10 +404,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
               updatedPlayer.score > otherPlayer.score
                 ? playerId
                 : otherPlayer.score > updatedPlayer.score
-                ? otherKey === 'player1'
-                  ? 1
-                  : 2
-                : null;
+                  ? otherKey === 'player1'
+                    ? 1
+                    : 2
+                  : null;
 
             set({
               phase: 'game_over',
@@ -521,7 +535,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
             score: state.player1.score,
             bestStreak: state.bestStreak,
             totalSolved: state.totalSolved,
-            accuracy: state.totalRounds > 0 ? Math.round((correctCount / state.totalRounds) * 100) : 0,
+            accuracy:
+              state.totalRounds > 0 ? Math.round((correctCount / state.totalRounds) * 100) : 0,
             examTrack: state.examTrack,
             difficulty: state.difficulty,
             durationSeconds: totalDuration,
@@ -555,8 +570,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
             state.player1.score > state.player2.score
               ? 1
               : state.player2.score > state.player1.score
-              ? 2
-              : null,
+                ? 2
+                : null,
           p1Score: state.player1.score,
           p2Score: state.player2.score,
           totalRounds: state.roundNumber,

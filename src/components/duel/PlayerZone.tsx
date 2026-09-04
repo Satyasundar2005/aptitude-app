@@ -1,21 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-  Animated,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Animated } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import {
-  Check,
-  X,
-  Flame,
-  Zap,
-  Award,
-  BookOpen,
-} from 'lucide-react-native';
+import { Check, X, Flame, Zap, Award, BookOpen } from 'lucide-react-native';
 import { PlayerState, Question } from '../../types/game';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -110,10 +96,10 @@ export default function PlayerZone({
     player.multiplier >= 4
       ? '4X MEGA'
       : player.multiplier >= 3
-      ? '3X SUPER'
-      : player.multiplier >= 2
-      ? '2X COMBO'
-      : '';
+        ? '3X SUPER'
+        : player.multiplier >= 2
+          ? '2X COMBO'
+          : '';
 
   return (
     <View style={styles.container}>
@@ -129,7 +115,12 @@ export default function PlayerZone({
       {/* Header: Player Name, Multiplier, Streak, Score */}
       <View style={styles.header}>
         <View style={styles.playerMeta}>
-          <View style={[styles.avatarCircle, { backgroundColor: accentColor + '25', borderColor: accentColor }]}>
+          <View
+            style={[
+              styles.avatarCircle,
+              { backgroundColor: accentColor + '25', borderColor: accentColor },
+            ]}
+          >
             <Award size={14} color={accentColor} />
           </View>
           <Text style={[styles.playerName, { color: accentColor }]}>{player.name}</Text>
@@ -160,12 +151,7 @@ export default function PlayerZone({
       </View>
 
       {/* Question Card with Exam Source Tag */}
-      <Animated.View
-        style={[
-          styles.questionCard,
-          { transform: [{ translateX: shakeX }] },
-        ]}
-      >
+      <Animated.View style={[styles.questionCard, { transform: [{ translateX: shakeX }] }]}>
         {question?.examTag && (
           <View style={styles.examTagBadge}>
             <BookOpen size={11} color="#60a5fa" style={{ marginRight: 4 }} />
@@ -173,11 +159,7 @@ export default function PlayerZone({
           </View>
         )}
 
-        <Text
-          style={styles.questionText}
-          numberOfLines={3}
-          adjustsFontSizeToFit
-        >
+        <Text style={styles.questionText} numberOfLines={3} adjustsFontSizeToFit>
           {question?.text ?? 'Preparing question...'}
         </Text>
       </Animated.View>
@@ -230,11 +212,7 @@ export default function PlayerZone({
                 <View style={labelBadgeStyle}>
                   <Text style={labelTextStyle}>{OPTION_LABELS[index]}</Text>
                 </View>
-                <Text
-                  style={optionTextStyle}
-                  numberOfLines={2}
-                  adjustsFontSizeToFit
-                >
+                <Text style={optionTextStyle} numberOfLines={2} adjustsFontSizeToFit>
                   {option}
                 </Text>
                 {StatusIcon && <View style={styles.statusIconContainer}>{StatusIcon}</View>}

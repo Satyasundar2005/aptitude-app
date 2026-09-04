@@ -50,18 +50,12 @@ export function getRankTitle(rating: number): string {
  * Calculates score for an answered question with time bonus and streak multiplier
  */
 export function calculateScore(params: ScoreCalculationParams): ScoreResult {
-  const {
-    baseScore = 100,
-    timeRemaining,
-    maxTime,
-    streak,
-    difficultyMultiplier = 1.0,
-  } = params;
+  const { baseScore = 100, timeRemaining, maxTime, streak, difficultyMultiplier = 1.0 } = params;
 
   const validMaxTime = maxTime > 0 ? maxTime : 15;
   const clampedTimeRemaining = Math.max(0, Math.min(timeRemaining, validMaxTime));
   const timeRatio = clampedTimeRemaining / validMaxTime;
-  
+
   // Time bonus is up to 50 additional points
   const timeBonus = Math.round(50 * timeRatio);
   const multiplier = getStreakMultiplier(streak + 1);

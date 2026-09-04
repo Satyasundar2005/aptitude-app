@@ -156,7 +156,9 @@ export default function OnlineDuelScreen() {
         <View style={styles.countdownOverlay}>
           <View style={styles.countdownTrackPill}>
             <Sparkles size={14} color="#818cf8" style={{ marginRight: 6 }} />
-            <Text style={styles.countdownTrackText}>ONLINE DUEL • {onlineRoom?.roomCode || 'LIVE'}</Text>
+            <Text style={styles.countdownTrackText}>
+              ONLINE DUEL • {onlineRoom?.roomCode || 'LIVE'}
+            </Text>
           </View>
           <Text style={styles.countdownNumber}>{countdown === 0 ? 'GO!' : countdown}</Text>
           <Text style={styles.countdownSub}>OUTSMART YOUR RIVAL</Text>
@@ -175,8 +177,8 @@ export default function OnlineDuelScreen() {
               {player1.score > player2.score
                 ? 'VICTORY! YOU WON!'
                 : player2.score > player1.score
-                ? `${player2.name.toUpperCase()} WINS!`
-                : 'PERFECT DRAW!'}
+                  ? `${player2.name.toUpperCase()} WINS!`
+                  : 'PERFECT DRAW!'}
             </Text>
 
             <Text style={styles.gameOverSub}>
@@ -204,7 +206,11 @@ export default function OnlineDuelScreen() {
 
             {/* Action Buttons */}
             <View style={styles.actionButtonsRow}>
-              <TouchableOpacity style={styles.rematchButton} onPress={handleRematch} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={styles.rematchButton}
+                onPress={handleRematch}
+                activeOpacity={0.8}
+              >
                 <RotateCcw size={16} color="#ffffff" style={{ marginRight: 6 }} />
                 <Text style={styles.rematchButtonText}>Play Again</Text>
               </TouchableOpacity>
@@ -233,8 +239,8 @@ export default function OnlineDuelScreen() {
               {player2.answeredCorrect === true
                 ? 'Answered Correctly ✓'
                 : player2.answeredCorrect === false
-                ? 'Answered Incorrectly ✗'
-                : 'Thinking...'}
+                  ? 'Answered Incorrectly ✗'
+                  : 'Thinking...'}
             </Text>
           </View>
 
@@ -251,8 +257,8 @@ export default function OnlineDuelScreen() {
             {scoreDiff > 0
               ? `You are +${scoreDiff} pts ahead!`
               : scoreDiff < 0
-              ? `${player2.name} is +${Math.abs(scoreDiff)} pts ahead`
-              : 'Scores are tied!'}
+                ? `${player2.name} is +${Math.abs(scoreDiff)} pts ahead`
+                : 'Scores are tied!'}
           </Text>
         </View>
       </View>
@@ -260,7 +266,9 @@ export default function OnlineDuelScreen() {
       {/* MIDDLE: TIMER, QUESTION PROGRESS & EXAM TAG */}
       <View style={styles.middleMetaBar}>
         <View style={styles.roundPill}>
-          <Text style={styles.roundPillText}>Q {roundNumber} / {totalRounds}</Text>
+          <Text style={styles.roundPillText}>
+            Q {roundNumber} / {totalRounds}
+          </Text>
         </View>
 
         <Animated.View style={[styles.timerPill, { transform: [{ scale: timerPulse }] }]}>
@@ -286,7 +294,9 @@ export default function OnlineDuelScreen() {
               <Text style={styles.questionTagText}>{currentQuestion.examTag}</Text>
             </View>
           )}
-          <Text style={styles.questionText}>{currentQuestion?.text ?? 'Preparing question...'}</Text>
+          <Text style={styles.questionText}>
+            {currentQuestion?.text ?? 'Preparing question...'}
+          </Text>
         </View>
 
         {/* Options List */}
@@ -295,10 +305,10 @@ export default function OnlineDuelScreen() {
             const isSelected = selectedOption === index;
             const isTrueCorrect = index === currentQuestion?.correctIndex;
 
-            let cardStyle: any[] = [styles.optionCard];
-            let labelBadgeStyle: any[] = [styles.optionLabelBadge];
-            let labelTextStyle: any[] = [styles.optionLabelText];
-            let textStyle: any[] = [styles.optionText];
+            const cardStyle: any[] = [styles.optionCard];
+            const labelBadgeStyle: any[] = [styles.optionLabelBadge];
+            const labelTextStyle: any[] = [styles.optionLabelText];
+            const textStyle: any[] = [styles.optionText];
             let StatusIcon = null;
 
             if (hasAnswered) {

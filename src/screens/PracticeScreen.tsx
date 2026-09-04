@@ -92,8 +92,12 @@ export default function PracticeScreen() {
   };
 
   const hasAnswered = selectedAnswerIndex !== null;
-  const isCorrect = selectedAnswerIndex !== null && currentQuestion && selectedAnswerIndex === currentQuestion.correctIndex;
-  const accuracy = stats.totalAttempted > 0 ? Math.round((stats.totalCorrect / stats.totalAttempted) * 100) : 100;
+  const isCorrect =
+    selectedAnswerIndex !== null &&
+    currentQuestion &&
+    selectedAnswerIndex === currentQuestion.correctIndex;
+  const accuracy =
+    stats.totalAttempted > 0 ? Math.round((stats.totalCorrect / stats.totalAttempted) * 100) : 100;
 
   return (
     <LinearGradient colors={['#0f172a', '#1e1b4b', '#0f172a']} style={styles.container}>
@@ -120,7 +124,9 @@ export default function PracticeScreen() {
         <Text style={styles.metaRound}>Question #{roundNumber}</Text>
         <View style={styles.accuracyPill}>
           <CheckCircle2 size={12} color="#10b981" style={{ marginRight: 4 }} />
-          <Text style={styles.accuracyText}>Accuracy: {accuracy}% ({stats.totalCorrect}/{stats.totalAttempted})</Text>
+          <Text style={styles.accuracyText}>
+            Accuracy: {accuracy}% ({stats.totalCorrect}/{stats.totalAttempted})
+          </Text>
         </View>
       </View>
 
@@ -149,10 +155,10 @@ export default function PracticeScreen() {
             const isSelected = selectedAnswerIndex === index;
             const isTrueCorrect = index === currentQuestion?.correctIndex;
 
-            let cardStyle: any[] = [styles.optionCard];
-            let labelBadgeStyle: any[] = [styles.optionLabelBadge];
-            let labelTextStyle: any[] = [styles.optionLabelText];
-            let textStyle: any[] = [styles.optionText];
+            const cardStyle: any[] = [styles.optionCard];
+            const labelBadgeStyle: any[] = [styles.optionLabelBadge];
+            const labelTextStyle: any[] = [styles.optionLabelText];
+            const textStyle: any[] = [styles.optionText];
             let IconComponent = null;
 
             if (hasAnswered) {
@@ -208,7 +214,9 @@ export default function PracticeScreen() {
             {currentQuestion?.examTag && (
               <View style={styles.solutionSourceBadge}>
                 <BookOpen size={11} color="#93c5fd" style={{ marginRight: 5 }} />
-                <Text style={styles.solutionSourceText}>Official Paper: {currentQuestion.examTag}</Text>
+                <Text style={styles.solutionSourceText}>
+                  Official Paper: {currentQuestion.examTag}
+                </Text>
               </View>
             )}
             <Text style={styles.explanationBody}>{currentQuestion.explanation}</Text>

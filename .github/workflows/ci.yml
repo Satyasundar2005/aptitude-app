@@ -24,6 +24,12 @@ jobs:
       - name: Install Dependencies
         run: npm ci --legacy-peer-deps
 
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Check Prettier Formatting
+        run: npm run format:check
+
       - name: Run TypeScript Typecheck
         run: npx tsc --noEmit
 

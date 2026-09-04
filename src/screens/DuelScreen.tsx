@@ -1,24 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-  Animated,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import {
-  Timer,
-  Trophy,
-  Swords,
-  Zap,
-  RotateCcw,
-  ArrowLeft,
-  Sparkles,
-} from 'lucide-react-native';
+import { Timer, Trophy, Swords, Zap, RotateCcw, ArrowLeft, Sparkles } from 'lucide-react-native';
 import { useGameStore } from '../store/useGameStore';
 import PlayerZone from '../components/duel/PlayerZone';
 
@@ -156,10 +141,7 @@ export default function DuelScreen() {
       {/* Game Over modal overlay */}
       {phase === 'game_over' && (
         <View style={styles.gameOverOverlay}>
-          <LinearGradient
-            colors={['#1e293b', '#0f172a']}
-            style={styles.gameOverCard}
-          >
+          <LinearGradient colors={['#1e293b', '#0f172a']} style={styles.gameOverCard}>
             <View style={styles.trophyContainer}>
               <Trophy size={40} color="#f59e0b" />
             </View>
@@ -170,10 +152,10 @@ export default function DuelScreen() {
                   ? 'YOU DEFEATED THE CPU!'
                   : 'CPU WINS THIS ROUND!'
                 : player1.score > player2.score
-                ? 'PLAYER 1 WINS!'
-                : player2.score > player1.score
-                ? 'PLAYER 2 WINS!'
-                : 'PERFECT DRAW!'}
+                  ? 'PLAYER 1 WINS!'
+                  : player2.score > player1.score
+                    ? 'PLAYER 2 WINS!'
+                    : 'PERFECT DRAW!'}
             </Text>
 
             <Text style={styles.gameOverSub}>
@@ -209,7 +191,7 @@ export default function DuelScreen() {
                   {mode === 'solo_blitz' ? `Round ${roundNumber}` : `Best Streak: ${player2.combo}`}
                 </Text>
               </View>
-                       </View>
+            </View>
 
             {/* Action Buttons */}
             <View style={styles.actionButtonsRow}>
@@ -222,11 +204,7 @@ export default function DuelScreen() {
                 <Text style={styles.rematchButtonText}>Play Again</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.exitButton}
-                onPress={handleExit}
-                activeOpacity={0.8}
-              >
+              <TouchableOpacity style={styles.exitButton} onPress={handleExit} activeOpacity={0.8}>
                 <ArrowLeft size={16} color="#94a3b8" style={{ marginRight: 6 }} />
                 <Text style={styles.exitButtonText}>Home</Text>
               </TouchableOpacity>

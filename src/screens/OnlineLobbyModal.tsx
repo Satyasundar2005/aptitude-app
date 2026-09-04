@@ -42,13 +42,8 @@ export default function OnlineLobbyModal({
   selectedTrack,
   selectedDifficulty,
 }: OnlineLobbyModalProps) {
-  const {
-    createOnlineRoom,
-    joinOnlineRoom,
-    startQuickMatch,
-    onlineRoom,
-    startOnlineMatch,
-  } = useGameStore();
+  const { createOnlineRoom, joinOnlineRoom, startQuickMatch, onlineRoom, startOnlineMatch } =
+    useGameStore();
 
   const { profile } = useUserStore();
 
@@ -127,8 +122,14 @@ export default function OnlineLobbyModal({
               }}
               activeOpacity={0.8}
             >
-              <Users size={14} color={tab === 'create' ? '#ffffff' : '#94a3b8'} style={{ marginRight: 6 }} />
-              <Text style={[styles.tabText, tab === 'create' && styles.tabTextActive]}>Create Room</Text>
+              <Users
+                size={14}
+                color={tab === 'create' ? '#ffffff' : '#94a3b8'}
+                style={{ marginRight: 6 }}
+              />
+              <Text style={[styles.tabText, tab === 'create' && styles.tabTextActive]}>
+                Create Room
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -139,8 +140,14 @@ export default function OnlineLobbyModal({
               }}
               activeOpacity={0.8}
             >
-              <KeyRound size={14} color={tab === 'join' ? '#ffffff' : '#94a3b8'} style={{ marginRight: 6 }} />
-              <Text style={[styles.tabText, tab === 'join' && styles.tabTextActive]}>Join Room</Text>
+              <KeyRound
+                size={14}
+                color={tab === 'join' ? '#ffffff' : '#94a3b8'}
+                style={{ marginRight: 6 }}
+              />
+              <Text style={[styles.tabText, tab === 'join' && styles.tabTextActive]}>
+                Join Room
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -151,18 +158,28 @@ export default function OnlineLobbyModal({
               }}
               activeOpacity={0.8}
             >
-              <Zap size={14} color={tab === 'quick' ? '#ffffff' : '#94a3b8'} style={{ marginRight: 6 }} />
-              <Text style={[styles.tabText, tab === 'quick' && styles.tabTextActive]}>Quick Rival</Text>
+              <Zap
+                size={14}
+                color={tab === 'quick' ? '#ffffff' : '#94a3b8'}
+                style={{ marginRight: 6 }}
+              />
+              <Text style={[styles.tabText, tab === 'quick' && styles.tabTextActive]}>
+                Quick Rival
+              </Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView contentContainerStyle={styles.tabContent} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            contentContainerStyle={styles.tabContent}
+            showsVerticalScrollIndicator={false}
+          >
             {/* TAB 1: CREATE ROOM */}
             {tab === 'create' && (
               <View style={styles.sectionContainer}>
                 <Text style={styles.sectionHeading}>Host a Match for Your Friend</Text>
                 <Text style={styles.sectionSub}>
-                  Create a private room in {selectedTrack.toUpperCase()} ({selectedDifficulty.toUpperCase()}) and share the code with your friend.
+                  Create a private room in {selectedTrack.toUpperCase()} (
+                  {selectedDifficulty.toUpperCase()}) and share the code with your friend.
                 </Text>
 
                 {createdCode ? (
@@ -170,8 +187,16 @@ export default function OnlineLobbyModal({
                     <Text style={styles.codeLabel}>ROOM CODE</Text>
                     <View style={styles.codeDisplayRow}>
                       <Text style={styles.codeText}>{createdCode}</Text>
-                      <TouchableOpacity style={styles.copyButton} onPress={handleCopyCode} activeOpacity={0.7}>
-                        {copied ? <Check size={16} color="#10b981" /> : <Copy size={16} color="#ffffff" />}
+                      <TouchableOpacity
+                        style={styles.copyButton}
+                        onPress={handleCopyCode}
+                        activeOpacity={0.7}
+                      >
+                        {copied ? (
+                          <Check size={16} color="#10b981" />
+                        ) : (
+                          <Copy size={16} color="#ffffff" />
+                        )}
                         <Text style={[styles.copyText, copied && { color: '#10b981' }]}>
                           {copied ? 'Copied!' : 'Copy'}
                         </Text>
@@ -210,7 +235,8 @@ export default function OnlineLobbyModal({
               <View style={styles.sectionContainer}>
                 <Text style={styles.sectionHeading}>Enter Friend's Room Code</Text>
                 <Text style={styles.sectionSub}>
-                  Ask your friend for their 6-character room code (e.g. GATE-492) and enter it below.
+                  Ask your friend for their 6-character room code (e.g. GATE-492) and enter it
+                  below.
                 </Text>
 
                 <TextInput
@@ -244,7 +270,8 @@ export default function OnlineLobbyModal({
               <View style={styles.sectionContainer}>
                 <Text style={styles.sectionHeading}>Match with an Online Aspirant</Text>
                 <Text style={styles.sectionSub}>
-                  No friend around right now? Compete instantly against an online peer preparing for {selectedTrack.toUpperCase()}!
+                  No friend around right now? Compete instantly against an online peer preparing for{' '}
+                  {selectedTrack.toUpperCase()}!
                 </Text>
 
                 <View style={styles.quickFeaturesBox}>
@@ -258,7 +285,9 @@ export default function OnlineLobbyModal({
                   </View>
                   <View style={styles.featureRow}>
                     <ShieldCheck size={16} color="#10b981" style={{ marginRight: 8 }} />
-                    <Text style={styles.featureText}>Authentic {selectedTrack.toUpperCase()} PYQ challenge</Text>
+                    <Text style={styles.featureText}>
+                      Authentic {selectedTrack.toUpperCase()} PYQ challenge
+                    </Text>
                   </View>
                 </View>
 

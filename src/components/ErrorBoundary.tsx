@@ -54,7 +54,8 @@ export class ErrorBoundary extends Component<Props, State> {
             </View>
             <Text style={styles.title}>System Glitch Detected</Text>
             <Text style={styles.subtitle}>
-              An unexpected error occurred during the match. Don't worry, your progress has been preserved.
+              An unexpected error occurred during the match. Don't worry, your progress has been
+              preserved.
             </Text>
 
             {this.state.error && (

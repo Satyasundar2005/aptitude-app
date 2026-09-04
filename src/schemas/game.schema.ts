@@ -3,15 +3,7 @@ import { z } from 'zod';
 export const DifficultySchema = z.enum(['easy', 'medium', 'hard']);
 export type Difficulty = z.infer<typeof DifficultySchema>;
 
-export const ExamTrackSchema = z.enum([
-  'all',
-  'gate',
-  'cat',
-  'gre',
-  'ese',
-  'placement',
-  'banking',
-]);
+export const ExamTrackSchema = z.enum(['all', 'gate', 'cat', 'gre', 'ese', 'placement', 'banking']);
 export type ExamTrack = z.infer<typeof ExamTrackSchema>;
 
 export const QuestionCategorySchema = z.enum([
@@ -32,24 +24,23 @@ export const QuestionCategorySchema = z.enum([
 ]);
 export type QuestionCategory = z.infer<typeof QuestionCategorySchema>;
 
-export const QuestionSchema = z.object({
-  id: z.string().min(1, 'Question ID is required'),
-  text: z.string().min(3, 'Question text must be at least 3 characters'),
-  options: z.array(z.string().min(1, 'Option cannot be empty')).min(2).max(6),
-  correctIndex: z.number().int().min(0),
-  category: QuestionCategorySchema,
-  difficulty: DifficultySchema,
-  timeLimit: z.number().positive().default(15),
-  examTrack: ExamTrackSchema.optional(),
-  examTag: z.string().optional(),
-  explanation: z.string().optional(),
-}).refine(
-  (data) => data.correctIndex >= 0 && data.correctIndex < data.options.length,
-  {
+export const QuestionSchema = z
+  .object({
+    id: z.string().min(1, 'Question ID is required'),
+    text: z.string().min(3, 'Question text must be at least 3 characters'),
+    options: z.array(z.string().min(1, 'Option cannot be empty')).min(2).max(6),
+    correctIndex: z.number().int().min(0),
+    category: QuestionCategorySchema,
+    difficulty: DifficultySchema,
+    timeLimit: z.number().positive().default(15),
+    examTrack: ExamTrackSchema.optional(),
+    examTag: z.string().optional(),
+    explanation: z.string().optional(),
+  })
+  .refine((data) => data.correctIndex >= 0 && data.correctIndex < data.options.length, {
     message: 'correctIndex must be within the bounds of options array',
     path: ['correctIndex'],
-  }
-);
+  });
 export type Question = z.infer<typeof QuestionSchema>;
 
 export const PlayerStateSchema = z.object({

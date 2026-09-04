@@ -107,21 +107,17 @@ export default function ProfileMenuModal({ visible, onClose, onNavigate }: Profi
 
   const handleLogout = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    Alert.alert(
-      'Log Out',
-      'Are you sure you want to log out of your ApptiClash account?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Log Out',
-          style: 'destructive',
-          onPress: () => {
-            logout();
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          },
+    Alert.alert('Log Out', 'Are you sure you want to log out of your ApptiClash account?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Log Out',
+        style: 'destructive',
+        onPress: () => {
+          logout();
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleLoginSubmit = () => {
@@ -164,11 +160,13 @@ export default function ProfileMenuModal({ visible, onClose, onNavigate }: Profi
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
 
         {/* Slide-in Drawer Container */}
-        <View style={[styles.drawerContainer, { paddingTop: Math.max(insets.top, 16), paddingBottom: Math.max(insets.bottom, 16) }]}>
-          <LinearGradient
-            colors={['#131a32', '#0f172a', '#0b1120']}
-            style={styles.drawerGradient}
-          >
+        <View
+          style={[
+            styles.drawerContainer,
+            { paddingTop: Math.max(insets.top, 16), paddingBottom: Math.max(insets.bottom, 16) },
+          ]}
+        >
+          <LinearGradient colors={['#131a32', '#0f172a', '#0b1120']} style={styles.drawerGradient}>
             {/* Drawer Header */}
             <View style={styles.drawerHeader}>
               <View style={styles.drawerTitleRow}>
@@ -345,10 +343,7 @@ export default function ProfileMenuModal({ visible, onClose, onNavigate }: Profi
                         return (
                           <TouchableOpacity
                             key={item.id}
-                            style={[
-                              styles.examPickItem,
-                              isSelected && styles.examPickItemActive,
-                            ]}
+                            style={[styles.examPickItem, isSelected && styles.examPickItemActive]}
                             onPress={() => {
                               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                               setExamTrack(item.id);
@@ -453,7 +448,9 @@ export default function ProfileMenuModal({ visible, onClose, onNavigate }: Profi
                       <GraduationCap size={20} color="#38bdf8" />
                       <View style={styles.settingTextGroup}>
                         <Text style={styles.settingLabel}>10-Yr PYQ Citation Tags</Text>
-                        <Text style={styles.settingDesc}>Show exam year badges (e.g. GATE 2023)</Text>
+                        <Text style={styles.settingDesc}>
+                          Show exam year badges (e.g. GATE 2023)
+                        </Text>
                       </View>
                     </View>
                     <Switch
@@ -540,7 +537,8 @@ export default function ProfileMenuModal({ visible, onClose, onNavigate }: Profi
                       <Text style={styles.helpTitle}>Online Multiplayer</Text>
                     </View>
                     <Text style={styles.helpBody}>
-                      Create a private room and share the 6-character room code with a friend anywhere. Or tap Instant Match to challenge live online aspirants.
+                      Create a private room and share the 6-character room code with a friend
+                      anywhere. Or tap Instant Match to challenge live online aspirants.
                     </Text>
                   </View>
 
@@ -553,7 +551,9 @@ export default function ProfileMenuModal({ visible, onClose, onNavigate }: Profi
                       <Text style={styles.helpTitle}>1v1 Split Screen (Offline)</Text>
                     </View>
                     <Text style={styles.helpBody}>
-                      Place your phone or tablet on a table between you and a friend. The screen splits and rotates 180° for face-to-face tabletop dueling with no internet needed!
+                      Place your phone or tablet on a table between you and a friend. The screen
+                      splits and rotates 180° for face-to-face tabletop dueling with no internet
+                      needed!
                     </Text>
                   </View>
 
@@ -566,7 +566,8 @@ export default function ProfileMenuModal({ visible, onClose, onNavigate }: Profi
                       <Text style={styles.helpTitle}>Timed Solo Sprint (10 PYQs)</Text>
                     </View>
                     <Text style={styles.helpBody}>
-                      Simulates real exam speed pressure (30s / 45s / 60s per Q). Review detailed step-by-step solutions at the end of the run.
+                      Simulates real exam speed pressure (30s / 45s / 60s per Q). Review detailed
+                      step-by-step solutions at the end of the run.
                     </Text>
                   </View>
 
@@ -579,7 +580,8 @@ export default function ProfileMenuModal({ visible, onClose, onNavigate }: Profi
                       <Text style={styles.helpTitle}>Practice & PYQ Drill</Text>
                     </View>
                     <Text style={styles.helpBody}>
-                      Untimed study mode with immediate step-by-step math breakdowns, formulas, and official exam question references.
+                      Untimed study mode with immediate step-by-step math breakdowns, formulas, and
+                      official exam question references.
                     </Text>
                   </View>
                 </View>
@@ -610,7 +612,11 @@ export default function ProfileMenuModal({ visible, onClose, onNavigate }: Profi
 
             {/* Avatar Selector */}
             <Text style={styles.inputLabel}>Choose Avatar</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.avatarPickerRow}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.avatarPickerRow}
+            >
               {AVATAR_OPTIONS.map((emoji) => (
                 <TouchableOpacity
                   key={emoji}
@@ -695,7 +701,8 @@ export default function ProfileMenuModal({ visible, onClose, onNavigate }: Profi
             </View>
 
             <Text style={styles.subModalDesc}>
-              Sign in to save your 10-Yr PYQ duel record and sync your ELO ranking with online rivals.
+              Sign in to save your 10-Yr PYQ duel record and sync your ELO ranking with online
+              rivals.
             </Text>
 
             <Text style={styles.inputLabel}>Your Name</Text>

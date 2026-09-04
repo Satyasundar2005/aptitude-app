@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Dimensions,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -67,7 +60,13 @@ const EXAM_TRACKS: ExamTrackConfig[] = [
     color: '#38bdf8',
     gradient: ['#0284c7', '#0369a1'],
     icon: GraduationCap,
-    topics: ['Work & Time', 'Speed & Distance', 'Probability', 'Spatial & Geometry', 'Modular Math'],
+    topics: [
+      'Work & Time',
+      'Speed & Distance',
+      'Probability',
+      'Spatial & Geometry',
+      'Modular Math',
+    ],
   },
   {
     id: 'cat',
@@ -87,7 +86,13 @@ const EXAM_TRACKS: ExamTrackConfig[] = [
     color: '#06b6d4',
     gradient: ['#0891b2', '#0e7490'],
     icon: Target,
-    topics: ['Quant Comparison', 'Data Interpretation', 'Algebra & Word', 'Geometry', 'Number Properties'],
+    topics: [
+      'Quant Comparison',
+      'Data Interpretation',
+      'Algebra & Word',
+      'Geometry',
+      'Number Properties',
+    ],
   },
   {
     id: 'ese',
@@ -97,7 +102,13 @@ const EXAM_TRACKS: ExamTrackConfig[] = [
     color: '#f97316',
     gradient: ['#ea580c', '#c2410c'],
     icon: Compass,
-    topics: ['PERT & CPM', 'Quality & Six Sigma', 'Engineering Ethics', 'Analytical Ability', 'Energy & Env'],
+    topics: [
+      'PERT & CPM',
+      'Quality & Six Sigma',
+      'Engineering Ethics',
+      'Analytical Ability',
+      'Energy & Env',
+    ],
   },
   {
     id: 'placement',
@@ -211,16 +222,18 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
       selectingFor === 'duel'
         ? 'OFFLINE 1v1 SPLIT SCREEN'
         : selectingFor === 'solo'
-        ? 'TIMED EXAM SPRINT (10-YR PYQs)'
-        : 'EXAM PRACTICE & 10-YR PYQ DRILL';
+          ? 'TIMED EXAM SPRINT (10-YR PYQs)'
+          : 'EXAM PRACTICE & 10-YR PYQ DRILL';
 
-    const ModeIcon =
-      selectingFor === 'duel' ? Swords : selectingFor === 'solo' ? Zap : BookOpen;
+    const ModeIcon = selectingFor === 'duel' ? Swords : selectingFor === 'solo' ? Zap : BookOpen;
 
     return (
       <LinearGradient colors={['#0f172a', '#1e1b4b', '#0f172a']} style={styles.container}>
         <StatusBar style="light" />
-        <ScrollView contentContainerStyle={styles.difficultyScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.difficultyScroll}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Header */}
           <View style={styles.diffHeaderSection}>
             <TouchableOpacity
@@ -253,8 +266,8 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
               {selectingFor === 'practice'
                 ? `Practicing authentic 10-year ${activeTrack.title} PYQs with step-by-step solutions and official paper citations.`
                 : selectingFor === 'solo'
-                ? `10 authentic PYQs under real exam pacing. Timer per question dictates pressure.`
-                : `Questions will be pulled from 10-year ${activeTrack.title} papers matched to your difficulty.`}
+                  ? `10 authentic PYQs under real exam pacing. Timer per question dictates pressure.`
+                  : `Questions will be pulled from 10-year ${activeTrack.title} papers matched to your difficulty.`}
             </Text>
           </View>
 
@@ -265,15 +278,15 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
                 diff.key === 'easy'
                   ? '60s / question • Foundation level • 10 Questions'
                   : diff.key === 'medium'
-                  ? '45s / question • GATE & GRE pace • 10 Questions'
-                  : '30s / question • CAT QA & Bank sprint • 10 Questions';
+                    ? '45s / question • GATE & GRE pace • 10 Questions'
+                    : '30s / question • CAT QA & Bank sprint • 10 Questions';
 
               const soloTag =
                 diff.key === 'easy'
                   ? '60s / Q (Easy)'
                   : diff.key === 'medium'
-                  ? '45s / Q (Medium)'
-                  : '30s / Q (Hard)';
+                    ? '45s / Q (Medium)'
+                    : '30s / Q (Hard)';
 
               return (
                 <TouchableOpacity
@@ -320,8 +333,8 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
                         {selectingFor === 'practice'
                           ? 'Start Practice'
                           : selectingFor === 'solo'
-                          ? 'Start 10-Q Sprint'
-                          : 'Tap to Begin'}
+                            ? 'Start 10-Q Sprint'
+                            : 'Tap to Begin'}
                       </Text>
                       <ChevronRight size={16} color={diff.color} />
                     </View>
@@ -419,7 +432,8 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
             </View>
             <Text style={styles.heroTitle}>Duel With Friends Online or Offline</Text>
             <Text style={styles.heroDesc}>
-              Play online with friends via room codes, duel face-to-face on one device offline, or drill PYQs solo.
+              Play online with friends via room codes, duel face-to-face on one device offline, or
+              drill PYQs solo.
             </Text>
           </LinearGradient>
         </View>
@@ -450,7 +464,9 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
                 activeOpacity={0.8}
               >
                 <LinearGradient
-                  colors={isSelected ? track.gradient : ['rgba(30, 41, 59, 0.7)', 'rgba(15, 23, 42, 0.8)']}
+                  colors={
+                    isSelected ? track.gradient : ['rgba(30, 41, 59, 0.7)', 'rgba(15, 23, 42, 0.8)']
+                  }
                   style={styles.trackGradient}
                 >
                   <View style={styles.trackIconBox}>
@@ -459,7 +475,12 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
                   <Text style={[styles.trackCardTitle, isSelected && { color: '#ffffff' }]}>
                     {track.title}
                   </Text>
-                  <Text style={[styles.trackCardSubtitle, isSelected && { color: 'rgba(255,255,255,0.85)' }]}>
+                  <Text
+                    style={[
+                      styles.trackCardSubtitle,
+                      isSelected && { color: 'rgba(255,255,255,0.85)' },
+                    ]}
+                  >
                     {track.subtitle}
                   </Text>
                 </LinearGradient>
@@ -484,7 +505,10 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
 
           {/* Quick Practice Trigger Button */}
           <TouchableOpacity
-            style={[styles.quickPracticeBtn, { backgroundColor: activeTrack.color + '20', borderColor: activeTrack.color + '50' }]}
+            style={[
+              styles.quickPracticeBtn,
+              { backgroundColor: activeTrack.color + '20', borderColor: activeTrack.color + '50' },
+            ]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               setSelectingFor('practice');
@@ -531,7 +555,8 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
                 <View style={styles.onlineTextGroup}>
                   <Text style={styles.onlineTitle}>PLAY ONLINE WITH FRIENDS</Text>
                   <Text style={styles.onlineDesc}>
-                    Create a private room, share room code with your friends, or match against live online rivals in {activeTrack.title}!
+                    Create a private room, share room code with your friends, or match against live
+                    online rivals in {activeTrack.title}!
                   </Text>
                 </View>
               </View>
@@ -568,7 +593,9 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
               end={{ x: 1, y: 1 }}
               style={styles.modeCardGradient}
             >
-              <View style={[styles.modeIconCircle, { backgroundColor: 'rgba(244, 114, 182, 0.2)' }]}>
+              <View
+                style={[styles.modeIconCircle, { backgroundColor: 'rgba(244, 114, 182, 0.2)' }]}
+              >
                 <Swords size={24} color="#f472b6" />
               </View>
 
@@ -580,7 +607,8 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
                   </View>
                 </View>
                 <Text style={styles.modeDesc}>
-                  Play with friends offline on one phone or tablet. Dual-rotated screen for face-to-face tabletop dueling.
+                  Play with friends offline on one phone or tablet. Dual-rotated screen for
+                  face-to-face tabletop dueling.
                 </Text>
               </View>
 
@@ -603,7 +631,9 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
               end={{ x: 1, y: 1 }}
               style={styles.modeCardGradient}
             >
-              <View style={[styles.modeIconCircle, { backgroundColor: 'rgba(255, 255, 255, 0.25)' }]}>
+              <View
+                style={[styles.modeIconCircle, { backgroundColor: 'rgba(255, 255, 255, 0.25)' }]}
+              >
                 <BookOpen size={24} color="#ffffff" />
               </View>
 
@@ -615,7 +645,8 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
                   </View>
                 </View>
                 <Text style={styles.modeDesc}>
-                  Untimed study with step-by-step solutions for {activeTrack.title}. Learn formulas and review concepts.
+                  Untimed study with step-by-step solutions for {activeTrack.title}. Learn formulas
+                  and review concepts.
                 </Text>
               </View>
 
@@ -638,7 +669,9 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
               end={{ x: 1, y: 1 }}
               style={styles.modeCardGradient}
             >
-              <View style={[styles.modeIconCircle, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
+              <View
+                style={[styles.modeIconCircle, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}
+              >
                 <Zap size={24} color="#ffffff" />
               </View>
 
@@ -650,7 +683,8 @@ export default function HomeScreen({ onNavigate }: HomeScreenProps) {
                   </View>
                 </View>
                 <Text style={styles.modeDesc}>
-                  Single-player test simulator under strict GATE/CAT/GRE time limits (30s / 45s / 60s per Q). Review solutions at the end!
+                  Single-player test simulator under strict GATE/CAT/GRE time limits (30s / 45s /
+                  60s per Q). Review solutions at the end!
                 </Text>
               </View>
 

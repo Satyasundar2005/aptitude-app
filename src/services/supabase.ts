@@ -16,8 +16,8 @@ export const isSupabaseConfigured = Boolean(
 if (!isSupabaseConfigured) {
   console.warn(
     '[Supabase] Warning: EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY are not configured.\n' +
-    'Please set them in your .env or .env.local file to enable database and realtime multiplayer features.\n' +
-    'ApptiClash will fall back to local offline mode.'
+      'Please set them in your .env or .env.local file to enable database and realtime multiplayer features.\n' +
+      'ApptiClash will fall back to local offline mode.'
   );
 }
 

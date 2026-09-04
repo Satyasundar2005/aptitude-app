@@ -2,7 +2,11 @@ import { z } from 'zod';
 
 export const EnvConfigSchema = z.object({
   EXPO_PUBLIC_SUPABASE_URL: z.string().url('Invalid Supabase URL').optional().or(z.literal('')),
-  EXPO_PUBLIC_SUPABASE_ANON_KEY: z.string().min(10, 'Invalid Supabase Anon Key').optional().or(z.literal('')),
+  EXPO_PUBLIC_SUPABASE_ANON_KEY: z
+    .string()
+    .min(10, 'Invalid Supabase Anon Key')
+    .optional()
+    .or(z.literal('')),
 });
 
 export type EnvConfig = z.infer<typeof EnvConfigSchema>;
