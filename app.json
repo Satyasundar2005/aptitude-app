@@ -19,6 +19,15 @@
       },
       "package": "com.appticlash.app"
     },
-    "plugins": ["expo-router"]
+    "plugins": [
+      "expo-router",
+      "expo-sqlite"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "86fa07a4-c198-42e5-bcad-eb3622acb996"
+      }
+    }
   }
 }
