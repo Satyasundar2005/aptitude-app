@@ -1,4 +1,4 @@
-name: CI
+﻿name: Continuous Integration
 
 on:
   push:
@@ -6,11 +6,14 @@ on:
   pull_request:
     branches: [main]
 
-jobs:
-  validate:
-    name: Typecheck & Tests
-    runs-on: ubuntu-latest
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
+jobs:
+  quality:
+    name: Lint & Typecheck
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -24,14 +27,52 @@ jobs:
       - name: Install Dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Run ESLint
-        run: npm run lint
+      - name: TypeScript Typecheck
+        run: npm run typecheck
 
-      - name: Check Prettier Formatting
+      - name: ESLint Check
+        run: npx eslint . --quiet
+
+      - name: Prettier Code Style Check
         run: npm run format:check
 
-      - name: Run TypeScript Typecheck
-        run: npx tsc --noEmit
+  test:
+    name: Unit & Store Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Run Jest Unit Tests
-        run: npm test -- --coverage
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run Jest Test Suite
+        run: npm test -- --ci --maxWorkers=2
+
+  build-check:
+    name: Expo Bundle Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Expo Web Bundle Export Test
+        run: npx expo export --platform web
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_placeholder' }}

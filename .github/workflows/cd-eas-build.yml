@@ -1,0 +1,60 @@
+﻿name: Continuous Deployment (EAS Build)
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Build Platform'
+        required: true
+        type: choice
+        options:
+          - android
+          - all
+          - ios
+        default: 'android'
+      profile:
+        description: 'EAS Build Profile'
+        required: true
+        type: choice
+        options:
+          - preview
+          - production
+          - development
+        default: 'preview'
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  eas-build:
+    name: Build & Package App
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Setup Expo & EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build with EAS
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            eas build --platform ${{ inputs.platform }} --profile ${{ inputs.profile }} --non-interactive
+          else
+            eas build --platform android --profile production --non-interactive
+          fi
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
