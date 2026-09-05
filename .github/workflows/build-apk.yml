@@ -16,6 +16,7 @@ jobs:
   build-apk:
     name: Build & Package Android APK
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout Code
@@ -49,20 +50,30 @@ jobs:
           EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
 
-      - name: Build Android Standalone Release APK with Gradle
+      - name: Embed Standalone Production Bundle & Assets
         run: |
-          cd android
-          chmod +x ./gradlew
-          ./gradlew assembleRelease --no-daemon
+          mkdir -p android/app/src/main/assets
+          npx expo export:embed --platform android --dev false --entry-file node_modules/expo-router/entry.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res
         env:
           NODE_ENV: production
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
 
+      - name: Build Android Standalone APK with Gradle
+        run: |
+          cd android
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
+        env:
+          GRADLE_OPTS: "-Xmx4096m -XX:MaxMetaspaceSize=1024m"
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+
       - name: Prepare APK for Release
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk AptiClash.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk AptiClash.apk
           ls -lh AptiClash.apk
 
       - name: Upload APK to GitHub Artifacts
