@@ -882,7 +882,22 @@ export default function ProfileMenuModal({ visible, onClose, onNavigate }: Profi
             {(localAuthError || authError) && (
               <View style={styles.authErrorBox}>
                 <AlertCircle size={15} color="#f43f5e" style={{ marginRight: 6 }} />
-                <Text style={styles.authErrorText}>{localAuthError || authError}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.authErrorText}>{localAuthError || authError}</Text>
+                  {authMode === 'signup' && (localAuthError || authError)?.includes('Sign In') && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setAuthMode('signin');
+                        setLocalAuthError(null);
+                      }}
+                      style={{ marginTop: 6 }}
+                    >
+                      <Text style={{ color: '#38bdf8', fontSize: 12, fontWeight: '700' }}>
+                        👉 Switch to Sign In Tab
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
             )}
 

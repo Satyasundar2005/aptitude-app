@@ -72,7 +72,13 @@ export async function signUpWithEmail(
     });
 
     if (error) {
-      return { success: false, error: error.message };
+      let friendlyError = error.message;
+      if (error.message.toLowerCase().includes('rate limit')) {
+        friendlyError = 'Email verification limit reached. If you already registered, please switch to Sign In.';
+      } else if (error.message.toLowerCase().includes('already registered')) {
+        friendlyError = 'This email is already registered. Please switch to the Sign In tab.';
+      }
+      return { success: false, error: friendlyError };
     }
 
     const user = data.user;
@@ -164,7 +170,11 @@ export async function signInWithEmail(email: string, password: string): Promise<
     });
 
     if (error) {
-      return { success: false, error: error.message };
+      let friendlyError = error.message;
+      if (error.message.toLowerCase().includes('not confirmed')) {
+        friendlyError = 'Email not yet confirmed. Please click the link in your email or disable "Confirm email" in Supabase Auth settings.';
+      }
+      return { success: false, error: friendlyError };
     }
 
     const user = data.user;
